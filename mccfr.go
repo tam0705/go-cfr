@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/timpalpant/go-cfr/internal/f32"
+	"github.com/tam0705/go-cfr/internal/f32"
 )
 
 // Sampler selects a subset of child nodes to traverse.

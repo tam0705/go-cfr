@@ -6,8 +6,8 @@ import (
 
 	rocksdb "github.com/tecbot/gorocksdb"
 
-	"github.com/timpalpant/go-cfr"
-	"github.com/timpalpant/go-cfr/internal/policy"
+	"github.com/tam0705/go-cfr"
+	"github.com/tam0705/go-cfr/internal/policy"
 )
 
 func init() {

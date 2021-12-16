@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
-	"github.com/timpalpant/go-cfr"
-	"github.com/timpalpant/go-cfr/internal/f32"
+	"github.com/tam0705/go-cfr"
+	"github.com/tam0705/go-cfr/internal/f32"
 )
 
 // SingleDeepCFR implements cfr.StrategyProfile, and uses function approximation

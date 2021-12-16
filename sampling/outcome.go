@@ -3,7 +3,7 @@ package sampling
 import (
 	"math/rand"
 
-	"github.com/timpalpant/go-cfr"
+	"github.com/tam0705/go-cfr"
 )
 
 // OutcomeSampler implements cfr.Sampler by sampling one player action

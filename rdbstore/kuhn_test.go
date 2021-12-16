@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/timpalpant/go-cfr"
-	"github.com/timpalpant/go-cfr/kuhn"
-	"github.com/timpalpant/go-cfr/tree"
+	"github.com/tam0705/go-cfr"
+	"github.com/tam0705/go-cfr/kuhn"
+	"github.com/tam0705/go-cfr/tree"
 )
 
 func TestVanilla(t *testing.T) {

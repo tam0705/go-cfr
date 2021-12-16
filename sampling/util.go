@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/timpalpant/go-cfr"
+	"github.com/tam0705/go-cfr"
 )
 
 const tol = 1e-3

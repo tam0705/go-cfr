@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"math"
 
-	"github.com/timpalpant/go-cfr/internal/f32"
+	"github.com/tam0705/go-cfr/internal/f32"
 )
 
 // TODO: Make configurable for VR-MCCFR.

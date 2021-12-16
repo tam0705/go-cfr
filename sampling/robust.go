@@ -3,7 +3,7 @@ package sampling
 import (
 	"math/rand"
 
-	"github.com/timpalpant/go-cfr"
+	"github.com/tam0705/go-cfr"
 )
 
 // RobustSampler implements cfr.Sampler by sampling a fixed number of actions

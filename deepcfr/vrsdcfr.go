@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 
-	"github.com/timpalpant/go-cfr"
+	"github.com/tam0705/go-cfr"
 )
 
 // VRSingleDeepCFR implements cfr.StrategyProfile, and uses function approximation

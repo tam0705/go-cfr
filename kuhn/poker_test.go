@@ -6,11 +6,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/timpalpant/go-cfr"
-	"github.com/timpalpant/go-cfr/deepcfr"
-	"github.com/timpalpant/go-cfr/mcts"
-	"github.com/timpalpant/go-cfr/sampling"
-	"github.com/timpalpant/go-cfr/tree"
+	"github.com/tam0705/go-cfr"
+	"github.com/tam0705/go-cfr/deepcfr"
+	"github.com/tam0705/go-cfr/mcts"
+	"github.com/tam0705/go-cfr/sampling"
+	"github.com/tam0705/go-cfr/tree"
 )
 
 func TestPoker_GameTree(t *testing.T) {

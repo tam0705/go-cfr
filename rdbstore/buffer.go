@@ -9,7 +9,7 @@ import (
 
 	rocksdb "github.com/tecbot/gorocksdb"
 
-	"github.com/timpalpant/go-cfr/deepcfr"
+	"github.com/tam0705/go-cfr/deepcfr"
 )
 
 // ReservoirBuffer implements a reservoir sampling buffer in which samples are

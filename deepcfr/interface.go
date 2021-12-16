@@ -3,7 +3,7 @@ package deepcfr
 import (
 	"io"
 
-	"github.com/timpalpant/go-cfr"
+	"github.com/tam0705/go-cfr"
 )
 
 // Samples must be binary marshalable, but embedding that interface breaks gob decoding.

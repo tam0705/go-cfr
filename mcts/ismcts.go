@@ -5,8 +5,8 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/timpalpant/go-cfr"
-	"github.com/timpalpant/go-cfr/sampling"
+	"github.com/tam0705/go-cfr"
+	"github.com/tam0705/go-cfr/sampling"
 )
 
 type Policy interface {
