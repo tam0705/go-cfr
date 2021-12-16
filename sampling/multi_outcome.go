@@ -3,8 +3,8 @@ package sampling
 import (
 	"math/rand"
 
-	"github.com/timpalpant/go-cfr"
-	"github.com/timpalpant/go-cfr/internal/f32"
+	"github.com/tam0705/go-cfr"
+	"github.com/tam0705/go-cfr/internal/f32"
 )
 
 // MultiOutcomeSampler implements cfr.Sampler by sampling at most k player actions

@@ -6,7 +6,7 @@ import (
 	"expvar"
 	"fmt"
 
-	"github.com/timpalpant/go-cfr/internal/policy"
+	"github.com/tam0705/go-cfr/internal/policy"
 )
 
 var (

@@ -1,7 +1,7 @@
 package cfr
 
 import (
-	"github.com/timpalpant/go-cfr/internal/f32"
+	"github.com/tam0705/go-cfr/internal/f32"
 )
 
 const eps = 1e-3

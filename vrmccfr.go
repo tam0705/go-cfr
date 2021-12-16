@@ -3,7 +3,7 @@ package cfr
 import (
 	"math/rand"
 
-	"github.com/timpalpant/go-cfr/internal/f32"
+	"github.com/tam0705/go-cfr/internal/f32"
 )
 
 type VRMCCFR struct {

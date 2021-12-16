@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 
-	"github.com/timpalpant/go-cfr"
+	"github.com/tam0705/go-cfr"
 )
 
 // ExperienceTuple is a single sample of action-result collected for training.

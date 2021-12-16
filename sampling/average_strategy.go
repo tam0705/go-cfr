@@ -3,15 +3,15 @@ package sampling
 import (
 	"math/rand"
 
-	"github.com/timpalpant/go-cfr"
-	"github.com/timpalpant/go-cfr/internal/f32"
-	"github.com/timpalpant/go-cfr/internal/policy"
+	"github.com/tam0705/go-cfr"
+	"github.com/tam0705/go-cfr/internal/f32"
+	"github.com/tam0705/go-cfr/internal/policy"
 )
 
 type AverageStrategyParams struct {
-	Epsilon float32
-	Tau     float32
-	Beta    float32
+	Epsilon float32 // 0 < e <= 1
+	Tau     float32 // t >= 1
+	Beta    float32 // b >= 0
 }
 
 // AverageStrategySampler implements cfr.Sampler by sampling some player actions

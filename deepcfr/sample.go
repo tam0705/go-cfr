@@ -5,7 +5,7 @@ import (
 	"encoding/gob"
 	"math"
 
-	"github.com/timpalpant/go-cfr"
+	"github.com/tam0705/go-cfr"
 )
 
 // RegretSample is a single sample of instantaneous advantages

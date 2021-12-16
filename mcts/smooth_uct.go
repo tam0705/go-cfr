@@ -7,8 +7,8 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/timpalpant/go-cfr"
-	"github.com/timpalpant/go-cfr/sampling"
+	"github.com/tam0705/go-cfr"
+	"github.com/tam0705/go-cfr/sampling"
 )
 
 // TODO(palpant): Make configurable; this assumes game outcomes are [-1, 1].

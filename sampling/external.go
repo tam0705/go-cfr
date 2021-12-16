@@ -1,6 +1,6 @@
 package sampling
 
-import "github.com/timpalpant/go-cfr"
+import "github.com/tam0705/go-cfr"
 
 // ExternalSampler implements cfr.Sampler by sampling all player actions.
 type ExternalSampler struct {
