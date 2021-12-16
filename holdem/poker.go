@@ -19,27 +19,40 @@ type Action byte
 
 const (
 	Random = 'r'
+	Fold
+	Call
+	Raise
+	AllIn
 	Check  = 'c'
 	Bet    = 'b'
 )
 
-type Card int
+type poker struct {
+	Num  byte // 2~10, 11: J, 12:Q, 13:K, 14:A
+	Kind byte // 1:Plums , 2:Diamond, 3:Heart, 4:Spade
+}
+
+type Cards [7]poker // 第0~1為手牌, 第2~6為公牌
+
+type HandPotential uint8
 
 const (
-	Jack Card = iota
-	Queen
-	King
+	HIGH_CARD HandPotential = 0x01
+	PICTURE HandPotential = 0x02
+	PAIR HandPotential = 0x04
+	IN_ORDER HandPotential = 0x08
+	SAME_SUIT HandPotential = 0x10
 )
 
-var cardStr = [...]string{
-	"J",
-	"Q",
-	"K",
-}
+type PlayerAction uint8
 
-func (c Card) String() string {
-	return cardStr[c]
-}
+const (
+	PLAYER_ACTION_CALL  PlayerAction = 0x01 // 跟注/call
+	PLAYER_ACTION_CHECK PlayerAction = 0x02 // 過牌/check
+	PLAYER_ACTION_RAISE PlayerAction = 0x04 // 加注/raise
+	PLAYER_ACTION_FOLD  PlayerAction = 0x08 // 放棄/fold
+	PLAYER_ACTION_ALLIN PlayerAction = 0x10 // 全下/all in
+)
 
 // PokerNode implements cfr.GameTreeNode for Kuhn Poker.
 type PokerNode struct {
@@ -49,24 +62,19 @@ type PokerNode struct {
 	probabilities []float64
 	history       string
 
-	// Private card held by either player.
-	p0Card, p1Card Card
+	hand Cards
 }
 
 func NewGame() *PokerNode {
 	return &PokerNode{player: chance}
 }
 
-// String implements fmt.Stringer.
-func (k PokerNode) String() string {
-	return fmt.Sprintf("Player %v's turn. History: %5s [Cards: P0 - %s, P1 - %s]",
-		k.player, k.history, k.p0Card, k.p1Card)
-}
 
 // Close implements cfr.GameTreeNode.
 func (k *PokerNode) Close() {
 	k.children = nil
 	k.probabilities = nil
+	k.hand = nil
 }
 
 // NumChildren implements cfr.GameTreeNode.
@@ -119,6 +127,7 @@ func (k *PokerNode) Type() cfr.NodeType {
 }
 
 func (k *PokerNode) IsTerminal() bool {
+	// CHANGE THIS ONE
 	return (k.history == "rrcc" || k.history == "rrcbc" ||
 		k.history == "rrcbb" || k.history == "rrbc" || k.history == "rrbb")
 }
@@ -170,6 +179,7 @@ type pokerInfoSet struct {
 }
 
 func (p pokerInfoSet) Key() []byte {
+	// CHANGE THIS ONE
 	return []byte(p.history + "-" + p.card)
 }
 
@@ -211,7 +221,7 @@ func (k *PokerNode) playerCard(player int) Card {
 func uniformDist(n int) []float64 {
 	result := make([]float64, n)
 	for i := range result {
-		result[i] = 1.0 / float64(n)
+		result[i] = (1.0 + float64(i)) / float64(n*(n+1)/2)
 	}
 	return result
 }
@@ -219,18 +229,52 @@ func uniformDist(n int) []float64 {
 func (k *PokerNode) buildChildren() {
 	switch len(k.history) {
 	case 0:
-		k.children = buildP0Deals(k)
-		k.probabilities = uniformDist(len(k.children))
+		k.children = buildPreflop(k)
 	case 1:
 		k.children = buildP1Deals(k)
 		k.probabilities = uniformDist(len(k.children))
 	case 2:
-		k.children = buildRound1Children(k)
+		k.children = buildP0Deals(k)
+		k.probabilities = uniformDist(len(k.children))
 	case 3:
-		k.children = buildRound2Children(k)
+		k.children = buildRound1Children(k)
 	case 4:
+		k.children = buildRound2Children(k)
+	case 5:
 		k.children = buildFinalChildren(k)
 	}
+}
+
+func buildPreflop(parent *PokerNode) []PokerNode {
+	var result []PokerNode
+	potentials := []HandPotential{
+		PICTURE + IN_ORDER + SAME_SUIT,
+		IN_ORDER + SAME_SUIT,
+		PICTURE + PAIR,
+		PAIR,
+		PICTURE + SAME_SUIT,
+		SAME_SUIT,
+		PICTURE + IN_ORDER,
+		IN_ORDER,
+		HIGH_CARD + PICTURE,
+		HIGH_CARD
+	}
+
+	for _, potential := range potentials {
+		child := {
+			parent: parent,
+			player: chance,
+			history: string(Random),
+			p0Card:  card,
+		}
+		result = append(result, child)
+	}
+
+	return result
+}
+
+func buildPostflop(parent *PokerNode) []PokerNode {
+
 }
 
 func buildP0Deals(parent *PokerNode) []PokerNode {

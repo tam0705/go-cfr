@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"math"
 
+	"fmt"
+
 	"github.com/tam0705/go-cfr/internal/f32"
 )
 
@@ -117,6 +119,7 @@ func (p *Policy) NumActions() int {
 }
 
 func (p *Policy) regretMatching() {
+	fmt.Println("Regret matching!")
 	copy(p.currentStrategy, p.regretSum)
 	makePositive(p.currentStrategy)
 	total := f32.Sum(p.currentStrategy)
@@ -125,6 +128,7 @@ func (p *Policy) regretMatching() {
 	} else {
 		for i := range p.currentStrategy {
 			p.currentStrategy[i] = 1.0 / float32(len(p.currentStrategy))
+			fmt.Printf("New strategy %d: %.2f\n", i, p.currentStrategy[i])
 		}
 	}
 }
@@ -138,6 +142,7 @@ func (p *Policy) UnmarshalBinary(buf []byte) error {
 	buf = buf[4:]
 
 	p.currentStrategy = decodeF32s(buf[:4*nActions])
+	fmt.Printf("New strategy: %.2f\n", p.currentStrategy)
 	buf = buf[4*nActions:]
 
 	p.regretSum = decodeF32s(buf[:4*nActions])
@@ -203,10 +208,19 @@ func decodeF32s(buf []byte) []float32 {
 	return v
 }
 
-func uniformDist(n int) []float32 {
+/*func uniformDist(n int) []float32 {
+	fmt.Println("moshikashite..?")
 	result := make([]float32, n)
 	p := 1.0 / float32(n)
 	f32.AddConst(p, result)
+	return result
+}*/
+
+func uniformDist(n int) []float32 {
+	result := make([]float32, n)
+	for i := range result {
+		result[i] = (1.0 + float32(i)) / float32(n*(n+1)/2)
+	}
 	return result
 }
 

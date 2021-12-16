@@ -59,6 +59,11 @@ func NewGame() *PokerNode {
 	return &PokerNode{player: chance}
 }
 
+// Get functions
+func (k PokerNode) GetProb() []float64 {
+	return k.probabilities
+}
+
 // String implements fmt.Stringer.
 func (k PokerNode) String() string {
 	return fmt.Sprintf("Player %v's turn. History: %5s [Cards: P0 - %s, P1 - %s]",
@@ -99,7 +104,7 @@ func (k *PokerNode) GetChildProbability(i int) float64 {
 	if k.children == nil {
 		k.buildChildren()
 	}
-
+	fmt.Printf("Probability %d: %.2f\n", i, k.probabilities)
 	return k.probabilities[i]
 }
 
@@ -213,7 +218,7 @@ func (k *PokerNode) playerCard(player int) Card {
 func uniformDist(n int) []float64 {
 	result := make([]float64, n)
 	for i := range result {
-		result[i] = 1.0 / float64(n)
+		result[i] = (1.0 + float64(i)) / float64(n*(n+1)/2)
 	}
 	return result
 }

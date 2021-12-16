@@ -74,6 +74,13 @@ func (pt *PolicyTable) GetPolicy(node GameTreeNode) NodePolicy {
 	return np
 }
 
+func (pt *PolicyTable) Iterate(iterator func(key string, strat []float32)) {
+	for key, p := range pt.policiesByKey {
+		iterator(key, p.GetStrategy())
+		fmt.Println(*p)
+	}
+}
+
 // UnmarshalBinary implements encoding.BinaryUnmarshaler.
 func (pt *PolicyTable) UnmarshalBinary(buf []byte) error {
 	r := bytes.NewReader(buf)

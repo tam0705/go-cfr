@@ -26,7 +26,7 @@ func VisitInfoSets(root cfr.GameTreeNode, visitor func(n cfr.GameTreeNode, playe
 				return
 			}
 
-			visitor(player, infoSet, n)
+			visitor(n, player, infoSet)
 			seen[string(key)] = struct{}{}
 		}
 	})
