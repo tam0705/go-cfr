@@ -4,8 +4,6 @@ import (
 	"encoding/binary"
 	"math"
 
-	"fmt"
-
 	"github.com/tam0705/go-cfr/internal/f32"
 )
 
@@ -35,8 +33,28 @@ func New(nActions int) *Policy {
 	}
 }
 
+func (p *Policy) CombineData(np *Policy) {
+	for i,s := range p.currentStrategy {
+		p.currentStrategy[i] = (s + np.currentStrategy[i]) / 2
+	}
+	p.currentStrategyWeight = (p.currentStrategyWeight + np.currentStrategyWeight) / 2
+	for i,s := range p.baseline {
+		p.baseline[i] = (s + np.baseline[i]) / 2
+	}
+	for i,s := range p.regretSum {
+		p.regretSum[i] = (s + np.regretSum[i]) / 2
+	}
+	for i,s := range p.strategySum {
+		p.strategySum[i] = (s + np.strategySum[i]) / 2
+	}
+}
+
 func (p *Policy) GetStrategy() []float32 {
 	return p.currentStrategy
+}
+
+func (p *Policy) SetStrategy(strat []float32) {
+	p.currentStrategy = strat
 }
 
 func (p *Policy) IsEmpty() bool {
@@ -64,7 +82,6 @@ func (p *Policy) NextStrategy(discountPositiveRegret, discountNegativeRegret, di
 			}
 		}
 	}
-
 	if discountNegativeRegret != 1.0 {
 		for i, x := range p.regretSum {
 			if x < 0 {
@@ -72,7 +89,6 @@ func (p *Policy) NextStrategy(discountPositiveRegret, discountNegativeRegret, di
 			}
 		}
 	}
-
 	p.regretMatching()
 	p.currentStrategyWeight = 0.0
 }
@@ -119,7 +135,6 @@ func (p *Policy) NumActions() int {
 }
 
 func (p *Policy) regretMatching() {
-	fmt.Println("Regret matching!")
 	copy(p.currentStrategy, p.regretSum)
 	makePositive(p.currentStrategy)
 	total := f32.Sum(p.currentStrategy)
@@ -128,7 +143,6 @@ func (p *Policy) regretMatching() {
 	} else {
 		for i := range p.currentStrategy {
 			p.currentStrategy[i] = 1.0 / float32(len(p.currentStrategy))
-			fmt.Printf("New strategy %d: %.2f\n", i, p.currentStrategy[i])
 		}
 	}
 }
@@ -142,7 +156,6 @@ func (p *Policy) UnmarshalBinary(buf []byte) error {
 	buf = buf[4:]
 
 	p.currentStrategy = decodeF32s(buf[:4*nActions])
-	fmt.Printf("New strategy: %.2f\n", p.currentStrategy)
 	buf = buf[4*nActions:]
 
 	p.regretSum = decodeF32s(buf[:4*nActions])
@@ -208,25 +221,16 @@ func decodeF32s(buf []byte) []float32 {
 	return v
 }
 
-/*func uniformDist(n int) []float32 {
-	fmt.Println("moshikashite..?")
+func uniformDist(n int) []float32 {
 	result := make([]float32, n)
 	p := 1.0 / float32(n)
 	f32.AddConst(p, result)
-	return result
-}*/
-
-func uniformDist(n int) []float32 {
-	result := make([]float32, n)
-	for i := range result {
-		result[i] = (1.0 + float32(i)) / float32(n*(n+1)/2)
-	}
 	return result
 }
 
 func makePositive(v []float32) {
 	for i := range v {
-		if v[i] < 0 {
+		if v[i] < 0.0 {
 			v[i] = 0.0
 		}
 	}

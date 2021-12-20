@@ -24,7 +24,7 @@ type PolicyTable struct {
 	iter   int
 
 	// Map of InfoSet Key -> the policy for that infoset.
-	policiesByKey map[string]*policy.Policy
+	PoliciesByKey map[string]*policy.Policy
 	mayNeedUpdate map[*policy.Policy]struct{}
 }
 
@@ -33,7 +33,7 @@ func NewPolicyTable(params DiscountParams) *PolicyTable {
 	return &PolicyTable{
 		params:        params,
 		iter:          1,
-		policiesByKey: make(map[string]*policy.Policy),
+		PoliciesByKey: make(map[string]*policy.Policy),
 		mayNeedUpdate: make(map[*policy.Policy]struct{}),
 	}
 }
@@ -50,6 +50,10 @@ func (pt *PolicyTable) Update() {
 	pt.iter++
 }
 
+func (pt *PolicyTable) SetIter(val int) {
+	pt.iter = val
+} 
+
 func (pt *PolicyTable) Iter() int {
 	return pt.iter
 }
@@ -58,13 +62,17 @@ func (pt *PolicyTable) Close() error {
 	return nil
 }
 
+func (pt *PolicyTable) GetPolicyTable() map[string]*policy.Policy {
+	return pt.PoliciesByKey
+}
+
 func (pt *PolicyTable) GetPolicy(node GameTreeNode) NodePolicy {
-	key := node.InfoSetKey(node.Player())
-	np, ok := pt.policiesByKey[string(key)]
+	key := string(node.InfoSetKey(node.Player()))
+	np, ok := pt.PoliciesByKey[string(key)]
 	if !ok {
 		np = policy.New(node.NumChildren())
-		pt.policiesByKey[string(key)] = np
-		numInfosets.Set(int64(len(pt.policiesByKey)))
+		pt.PoliciesByKey[string(key)] = np
+		numInfosets.Set(int64(len(pt.PoliciesByKey)))
 	} else if np.NumActions() != node.NumChildren() {
 		panic(fmt.Errorf("strategy has n_actions=%v but node has n_children=%v: %v",
 			np.NumActions(), node.NumChildren(), node))
@@ -74,10 +82,30 @@ func (pt *PolicyTable) GetPolicy(node GameTreeNode) NodePolicy {
 	return np
 }
 
+func (pt *PolicyTable) GetPolicyByKey(key string) (NodePolicy, bool) {
+	np, ok := pt.PoliciesByKey[key]
+	if !ok {
+		np = policy.New(0)
+	}
+	return np, ok
+}
+
+func (pt *PolicyTable) SetStrategy(key string, strat []float32) {
+	np, ok := pt.PoliciesByKey[key]
+	if !ok {
+		np = policy.New(len(strat))
+		pt.PoliciesByKey[string(key)] = np
+		numInfosets.Set(int64(len(pt.PoliciesByKey)))
+	} else if np.NumActions() != len(strat) {
+		panic(fmt.Errorf("strategy has n_actions=%v but strategy's size is=%v",
+			np.NumActions(), len(strat)))
+	}
+	np.SetStrategy(strat)
+}
+
 func (pt *PolicyTable) Iterate(iterator func(key string, strat []float32)) {
-	for key, p := range pt.policiesByKey {
+	for key, p := range pt.PoliciesByKey {
 		iterator(key, p.GetStrategy())
-		fmt.Println(*p)
 	}
 }
 
@@ -98,7 +126,7 @@ func (pt *PolicyTable) UnmarshalBinary(buf []byte) error {
 		return err
 	}
 
-	pt.policiesByKey = make(map[string]*policy.Policy, nStrategies)
+	pt.PoliciesByKey = make(map[string]*policy.Policy, nStrategies)
 	for i := 0; i < nStrategies; i++ {
 		var key string
 		if err := dec.Decode(&key); err != nil {
@@ -110,7 +138,7 @@ func (pt *PolicyTable) UnmarshalBinary(buf []byte) error {
 			return err
 		}
 
-		pt.policiesByKey[key] = &p
+		pt.PoliciesByKey[key] = &p
 	}
 
 	pt.mayNeedUpdate = make(map[*policy.Policy]struct{})
@@ -129,11 +157,11 @@ func (pt *PolicyTable) MarshalBinary() ([]byte, error) {
 		return nil, err
 	}
 
-	if err := enc.Encode(len(pt.policiesByKey)); err != nil {
+	if err := enc.Encode(len(pt.PoliciesByKey)); err != nil {
 		return nil, err
 	}
 
-	for key, p := range pt.policiesByKey {
+	for key, p := range pt.PoliciesByKey {
 		if err := enc.Encode(key); err != nil {
 			return nil, err
 		}

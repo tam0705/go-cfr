@@ -41,7 +41,7 @@ func NewMCCFR(strategyProfile StrategyProfile, sampler Sampler) *MCCFR {
 
 func (c *MCCFR) Run(node GameTreeNode) float32 {
 	iter := c.strategyProfile.Iter()
-	c.traversingPlayer = int(iter % 2)
+	c.traversingPlayer = int((iter+1) % 2)
 	c.sampledActions = c.mapPool.alloc()
 	defer c.mapPool.free(c.sampledActions)
 	return c.runHelper(node, node.Player(), 1.0)
@@ -92,7 +92,7 @@ func (c *MCCFR) handleTraversingPlayerNode(node GameTreeNode, sampleProb float32
 	regrets := c.slicePool.alloc(nChildren)
 	oldSampledActions := c.sampledActions
 	c.sampledActions = c.mapPool.alloc()
-
+	
 	for i, q := range qs {
 		child := node.GetChild(i)
 		var util float32
@@ -102,10 +102,11 @@ func (c *MCCFR) handleTraversingPlayerNode(node GameTreeNode, sampleProb float32
 
 		regrets[i] = util
 	}
-
+	
 	cfValue := f32.DotUnitary(policy.GetStrategy(), regrets)
 	f32.AddConst(-cfValue, regrets)
 	policy.AddRegret(1.0/sampleProb, qs, regrets)
+	policy.NextStrategy(1.0, 1.0, 1.0)
 
 	c.slicePool.free(qs)
 	c.slicePool.free(regrets)

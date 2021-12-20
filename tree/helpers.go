@@ -1,14 +1,26 @@
 package tree
 
 import (
+	"fmt"
+	"strings"
 	"github.com/tam0705/go-cfr"
 )
 
 func Visit(root cfr.GameTreeNode, visitor func(node cfr.GameTreeNode)) {
 	visitor(root)
-
+	
 	for i := 0; i < root.NumChildren(); i++ {
 		Visit(root.GetChild(i), visitor)
+	}
+
+	root.Close()
+}
+
+func Visits(root cfr.GameTreeNode, height int) {
+	fmt.Println(strings.Repeat(" ", height), root)
+	
+	for i := 0; i < root.NumChildren(); i++ {
+		Visits(root.GetChild(i), height + 1)
 	}
 
 	root.Close()
@@ -17,6 +29,9 @@ func Visit(root cfr.GameTreeNode, visitor func(node cfr.GameTreeNode)) {
 func VisitInfoSets(root cfr.GameTreeNode, visitor func(n cfr.GameTreeNode, player int, infoSet cfr.InfoSet)) {
 	seen := make(map[string]struct{})
 	Visit(root, func(node cfr.GameTreeNode) {
+		if node == nil {
+			return
+		}
 		if node.Type() == cfr.PlayerNodeType {
 			n := node
 			player := node.Player()

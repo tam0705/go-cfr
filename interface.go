@@ -6,7 +6,7 @@ import (
 )
 
 // NodeType is the type of node in an extensive-form game tree.
-type NodeType int
+type NodeType uint8
 
 const (
 	ChanceNodeType NodeType = iota
@@ -69,6 +69,8 @@ type TreeNode interface {
 
 // GameTreeNode is the interface for a node in an extensive-form game tree.
 type GameTreeNode interface {
+	// Get node given a history string
+	GetNode(history string) GameTreeNode
 	// NodeType returns the type of game node.
 	Type() NodeType
 	// Release resources held by this node (including any children).
@@ -86,6 +88,8 @@ type GameTreeNode interface {
 type StrategyProfile interface {
 	// GetPolicy returns the NodePolicy for the given node.
 	GetPolicy(node GameTreeNode) NodePolicy
+	GetPolicyByKey(key string) (NodePolicy, bool)
+	SetStrategy(key string, strat []float32)
 
 	// Calculate the next strategy profile for all visited nodes.
 	Update()
@@ -105,6 +109,9 @@ type NodePolicy interface {
 	// GetStrategy gets the current vector of probabilities with which the ith
 	// available action should be played.
 	GetStrategy() []float32
+	SetStrategy(strat []float32)
+
+	NextStrategy(discountPositiveRegret, discountNegativeRegret, discountstrategySum float32)
 
 	// GetBaseline gets the current vector of action-dependend baseline values,
 	// used in VR-MCCFR.
@@ -119,4 +126,50 @@ type NodePolicy interface {
 
 	// IsEmpty returns true if the NodePolicy is new and has no accumulated regret.
 	IsEmpty() bool
+}
+
+type EnemyType int
+
+type poker struct {
+	Num  byte // 2~10, 11: J, 12:Q, 13:K, 14:A
+	Kind byte // 1:Plums , 2:Diamond, 3:Heart, 4:Spade
+}
+
+type Cards [7]poker // 第0~1為手牌, 第2~6為公牌
+
+type RobotInherit struct {
+	ContestMoney float64 // Total money on table
+	BetPos       float64 // Current self total bet
+	Card         Cards   // 第0~1為手牌, 第2~6為公牌
+	SbBet        float64 // Small blind
+	RaiseCounter byte    // number of raise this round (含其他玩家的加注)
+	RaiseSelf    byte    // number of raise only self (只算自己)
+	RaisebyOther bool    // number of raise one round before except self
+	IsContest    bool    // 是否為獎金賽
+	PlayerNum    byte    // Number of player this round
+}
+
+type PlayerAction uint8
+
+// Front-end interface of CFR for Hold'em
+type AI interface {
+	// Init MCCFR nIter times with a pre-determined enemy type
+	// Linear CFR, Average Strategy params { 0.05, 1000, 1000000 } and Discount params { 1, 1, 1 } are used
+	Init(enemy EnemyType, policyFileName string)
+
+	// Train tree using MCCFR
+	// Return value: expected value
+	Run(nIter int) float64
+
+	GetDecision(Informations RobotInherit, OpponentPreviousAction PlayerAction, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (PlayerAction, float64, string)
+
+	GetExpectation(history string, smallBlind float64) float64
+
+	// Print functions
+	PrintTree(maxLines int)
+	PrintPolicy(maxLines int)
+
+	// Save & load functions for PolicyTable
+	SavePolicy(fileName string)
+	LoadPolicy(fileName string, replace bool)
 }

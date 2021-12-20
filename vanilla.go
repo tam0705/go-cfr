@@ -85,6 +85,7 @@ func (c *CFR) handlePlayerNode(node GameTreeNode, reachP0, reachP1, reachChance 
 		ones[i] = 1.0
 	}
 	policy.AddRegret(counterFactualP, ones, regrets)
+	policy.NextStrategy(1.0, 1.0, 1.0)
 	reachP := reachProb(player, reachP0, reachP1, reachChance)
 	policy.AddStrategyWeight(reachP)
 	return cfValue
