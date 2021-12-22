@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+
+	"github.com/tam0705/go-cfr/def"
 )
 
 const (
@@ -19,46 +21,8 @@ const (
 	HCARD_PROB     = 0.174
 )
 
-type poker struct {
-	Num  byte // 2~10, 11: J, 12:Q, 13:K, 14:A
-	Kind byte // 1:Plums , 2:Diamond, 3:Heart, 4:Spade
-}
-
-type Cards [7]poker // 第0~1為手牌, 第2~6為公牌
-
-/*
-桌子可額外提供的
-桌子狀態、莊家位、小盲注位、大盲注位、是否升盲(獎金賽用)
-*/
-
-type RobotInherit struct {
-	ContestMoney float64 // Total money on table
-	BetPos       float64 // Current self total bet
-	Card         Cards   // 第0~1為手牌, 第2~6為公牌
-	SbBet        float64 // Small blind
-	RaiseCounter byte    // number of raise this round (含其他玩家的加注)
-	RaiseSelf    byte    // number of raise only self (只算自己)
-	RaisebyOther bool    // number of raise one round before except self
-	IsContest    bool    // 是否為獎金賽
-	PlayerNum    byte    // Number of player this round
-}
-
-type PlayerAction uint8
-
-const (
-	PLAYER_ACTION_CALL  PlayerAction = 0x01 // 跟注/call
-	PLAYER_ACTION_CHECK PlayerAction = 0x02 // 過牌/check
-	PLAYER_ACTION_RAISE PlayerAction = 0x04 // 加注/raise
-	PLAYER_ACTION_FOLD  PlayerAction = 0x08 // 放棄/fold
-	PLAYER_ACTION_ALLIN PlayerAction = 0x10 // 全下/all in
-)
-
-type SeatIndex struct {
-	num int
-}
-
-var SeatIdx SeatIndex   // Seat index
-var Action PlayerAction // 被通知的玩家能夠行動的方式(複合的Flag) / the move availble for current player?
+var SeatIdx Def.SeatIndex   // Seat index
+var Action Def.PlayerAction // 被通知的玩家能夠行動的方式(複合的Flag) / the move availble for current player?
 var Standard float64    // 現在壓注的標準
 var Total float64       // 現在壓注的總額
 var RaiseDiff float64   // 如果要加注，則跟到標準後，要大餘等於這個加注差值
@@ -87,7 +51,7 @@ func maxInt(a, b int64) int64 {
 	}
 }
 
-func GetRaiseAmount(ConfidenceAmount, Standard, RaiseDiff, AllInBound float64, Informations RobotInherit) float64 {
+func GetRaiseAmount(ConfidenceAmount, Standard, RaiseDiff, AllInBound float64, Informations Def.RobotInherit) float64 {
 	var ratioToAllIn float64 = math.Min(AllInBound-Informations.BetPos, Informations.ContestMoney) / Standard
 	var ratioToRaise float64 = (RaiseDiff + Standard - Informations.BetPos) / Standard
 	ratioToAllIn /= Informations.SbBet
@@ -117,12 +81,12 @@ func GetRaiseAmount(ConfidenceAmount, Standard, RaiseDiff, AllInBound float64, I
 }
 
 //OpponentPreviousAction = set to PLAYER_ACTION_FOLD if opponent has not played this round
-func GetDecision(Informations RobotInherit, OpponentPreviousAction PlayerAction, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (PlayerAction, float64, string) {
+func GetDecision(Informations Def.RobotInherit, OpponentPreviousAction Def.PlayerAction, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
 	var currentRound byte = GetCurrentRound(Informations.Card)
 
 	if len(myHistory) == 3*int(currentRound) {
 		//check whether round repeats, if it does, clean history
-		if OpponentPreviousAction == PLAYER_ACTION_ALLIN {
+		if OpponentPreviousAction == Def.PLAYER_ACTION_ALLIN {
 			myHistory = myHistory[0:len(myHistory)-2] + "a" //discard the last
 		} else {
 			myHistory = myHistory[0:len(myHistory)-2] + "r" //discard the last
@@ -138,9 +102,9 @@ func GetDecision(Informations RobotInherit, OpponentPreviousAction PlayerAction,
 		//check whether opponent has played or not
 		//since it is not possible this function is called when one of them has fold, so
 		//set as fold if opponent has not moved
-		if OpponentPreviousAction == PLAYER_ACTION_ALLIN {
+		if OpponentPreviousAction == Def.PLAYER_ACTION_ALLIN {
 			myHistory += "a"
-		} else if OpponentPreviousAction == PLAYER_ACTION_RAISE {
+		} else if OpponentPreviousAction == Def.PLAYER_ACTION_RAISE {
 			myHistory += "r"
 		} else {
 			myHistory += "c"
@@ -167,16 +131,16 @@ func GetDecision(Informations RobotInherit, OpponentPreviousAction PlayerAction,
 	}
 
 	randomFloat := rand.Float64()
-	myAction := PLAYER_ACTION_CALL
+	myAction := Def.PLAYER_ACTION_CALL
 	var myBet float64 = 0.0
 	if strategyType == 2 {
 		//only fold and all in
 		if randomFloat < myStrategy[0] {
-			myAction = PLAYER_ACTION_FOLD
+			myAction = Def.PLAYER_ACTION_FOLD
 			myBet = 0.0
 			myHistory = myHistory + "f"
 		} else {
-			myAction = PLAYER_ACTION_ALLIN
+			myAction = Def.PLAYER_ACTION_ALLIN
 			myBet = math.Min(AllInBound-Informations.BetPos, Informations.ContestMoney)
 			myHistory = myHistory + "a"
 		}
@@ -208,7 +172,7 @@ func GetDecision(Informations RobotInherit, OpponentPreviousAction PlayerAction,
 		}
 
 		if normalizingSum == 0 {
-			myAction = PLAYER_ACTION_FOLD
+			myAction = Def.PLAYER_ACTION_FOLD
 			myBet = 0.0
 			myHistory += "f"
 		} else {
@@ -217,25 +181,25 @@ func GetDecision(Informations RobotInherit, OpponentPreviousAction PlayerAction,
 			}
 
 			if randomFloat < myStrategy[0] {
-				myAction = PLAYER_ACTION_FOLD
+				myAction = Def.PLAYER_ACTION_FOLD
 				myBet = 0.0
 				myHistory += "h"
 			} else if randomFloat < myStrategy[0]+myStrategy[1] {
 				if myAvailableAction[1] == "1" {
-					myAction = PLAYER_ACTION_CHECK
+					myAction = Def.PLAYER_ACTION_CHECK
 					myBet = 0.0
 					myHistory += "c"
 				} else {
-					myAction = PLAYER_ACTION_CALL
+					myAction = Def.PLAYER_ACTION_CALL
 					myBet = Standard - Informations.BetPos
 					myHistory += "c"
 				}
 			} else if randomFloat < myStrategy[0]+myStrategy[1] {
-				myAction = PLAYER_ACTION_RAISE
+				myAction = Def.PLAYER_ACTION_RAISE
 				myBet = GetRaiseAmount(myStrategy[2], Standard, RaiseDiff, AllInBound, Informations)
 				myHistory += "r"
 			} else {
-				myAction = PLAYER_ACTION_ALLIN
+				myAction = Def.PLAYER_ACTION_ALLIN
 				myBet = math.Min(AllInBound-Informations.BetPos, Informations.ContestMoney)
 				myHistory += "a"
 			}
@@ -244,18 +208,18 @@ func GetDecision(Informations RobotInherit, OpponentPreviousAction PlayerAction,
 	return myAction, myBet, myHistory
 }
 
-func ArrangeCards(mycard Cards) Cards {
+func ArrangeCards(mycard Def.Cards) Def.Cards {
 	for i := 0; i < 6; i++ {
 		for j := 0; j < 6-i; j++ {
 			if mycard[j+1].Kind == 0 && mycard[j+1].Num == 0 {
 				continue
 			}
 			if mycard[j].Num > mycard[j+1].Num {
-				var temp poker = mycard[j]
+				var temp Def.Poker = mycard[j]
 				mycard[j] = mycard[j+1]
 				mycard[j+1] = temp
 			} else if mycard[j].Num == mycard[j+1].Num && mycard[j].Kind == mycard[j+1].Kind {
-				var temp poker = mycard[j]
+				var temp Def.Poker = mycard[j]
 				mycard[j] = mycard[j+1]
 				mycard[j+1] = temp
 			}
@@ -264,25 +228,25 @@ func ArrangeCards(mycard Cards) Cards {
 	return mycard
 }
 
-func HistoryAdd(mycard Cards) string {
+func HistoryAdd(mycard Def.Cards) string {
 	mycard = ArrangeCards(mycard)
 	var handStrength byte = 0
-	var plums Cards
+	var plums Def.Cards
 	var plumsLength byte = 0
-	var diamonds Cards
+	var diamonds Def.Cards
 	var diamondsLength byte = 0
-	var hearts Cards
+	var hearts Def.Cards
 	var heartsLength byte = 0
-	var spades Cards
+	var spades Def.Cards
 	var spadesLength byte = 0
-	var straight Cards
+	var straight Def.Cards
 	var straightLength byte = 0
 	var fourAKind byte = 0  //only 1 possibility
 	var fourAmount byte = 1 //only need the number
 	var threeAKind byte = 0
 	var threeSymbols [3]byte //state here the number and kind of card that is missing
 	var threeAmount byte = 1
-	var pairs [2][2]poker //state here the number and kind of card that is missing
+	var pairs [2][2]Def.Poker //state here the number and kind of card that is missing
 
 	/*
 		power will decide hand strength
@@ -374,7 +338,7 @@ func HistoryAdd(mycard Cards) string {
 					straightLength += 1
 				} else {
 					for i := 0; i < int(straightLength); i++ {
-						straight[i] = poker{0, 0}
+						straight[i] = Def.Poker{0, 0}
 					}
 					straight[0] = mycard[index]
 					straightLength = 1
@@ -537,7 +501,7 @@ func HistoryAdd(mycard Cards) string {
 	return returnString
 }
 
-func GetCurrentRound(myCard Cards) byte {
+func GetCurrentRound(myCard Def.Cards) byte {
 	//4 = river
 	//3 = turn
 	//2 = flop
@@ -613,11 +577,11 @@ func PseudoGeneratorForOpponentAllIn(totalMoney int64) int64 {
 	return ALLIN_TRAIN
 }
 
-func randomShuffleArray(myCard Cards) Cards {
+func randomShuffleArray(myCard Def.Cards) Def.Cards {
 	repetition := 50 + rand.Int()%51
 	randomIndex1 := 0
 	randomIndex2 := 0
-	var temp poker
+	var temp Def.Poker
 	for a := 0; a < repetition; a++ {
 		randomIndex1 = rand.Int() % 7
 		randomIndex2 = rand.Int() % 7
@@ -637,57 +601,57 @@ func randomShuffleArray(myCard Cards) Cards {
 //2 pair = 2
 //1 pair = 1
 //highcard = 0
-func setRoyal() Cards {
+func setRoyal() Def.Cards {
 	var randomKind byte = byte(rand.Int()%4 + 1)
-	var myCard Cards = Cards{{10, randomKind}, {11, randomKind}, {12, randomKind}, {13, randomKind}, {14, randomKind}}
+	var myCard Def.Cards = Def.Cards{{10, randomKind}, {11, randomKind}, {12, randomKind}, {13, randomKind}, {14, randomKind}}
 	var number byte = 10
 	for number >= 10 && randomKind == myCard[0].Kind {
 		randomKind = byte(rand.Int()%4 + 1)
 		number = byte(rand.Int()%13 + 2)
 	}
-	myCard[5] = poker{number, randomKind}
+	myCard[5] = Def.Poker{number, randomKind}
 	var number2 byte = 10
 	var randomKind2 byte = randomKind
 	for (number2 >= 10 && randomKind2 == myCard[0].Kind) || (number2 >= number && randomKind2 == randomKind) {
 		randomKind2 = byte(rand.Int()%4 + 1)
 		number2 = byte(rand.Int()%13 + 2)
 	}
-	myCard[6] = poker{number2, randomKind2}
+	myCard[6] = Def.Poker{number2, randomKind2}
 	//shuffle the card
 	myCard = randomShuffleArray(myCard)
 	return myCard
 }
 
-func setStraightFlush(numberOfRound int, p bool) Cards {
+func setStraightFlush(numberOfRound int, p bool) Def.Cards {
 	var randomKind byte = byte(rand.Int()%4 + 1)
-	var myCard Cards
+	var myCard Def.Cards
 	if numberOfRound > 1 {
 		var startingNumber byte = byte(rand.Int()%9 + 2)
-		myCard = Cards{{startingNumber, randomKind}, {startingNumber + 1, randomKind}, {startingNumber + 2, randomKind}, {startingNumber + 3, randomKind}, {startingNumber + 4, randomKind}}
+		myCard = Def.Cards{{startingNumber, randomKind}, {startingNumber + 1, randomKind}, {startingNumber + 2, randomKind}, {startingNumber + 3, randomKind}, {startingNumber + 4, randomKind}}
 		var number byte = byte(rand.Int()%13 + 2)
 		randomKind = byte(rand.Int()%4 + 1)
 		for number >= startingNumber && number <= startingNumber+4 && randomKind == myCard[0].Kind {
 			randomKind = byte(rand.Int()%4 + 1)
 			number = byte(rand.Int()%13 + 2)
 		}
-		myCard[5] = poker{number, randomKind}
+		myCard[5] = Def.Poker{number, randomKind}
 		var number2 byte = byte(rand.Int()%13 + 2)
 		var randomKind2 byte = byte(rand.Int()%4 + 1)
 		for (number2 >= startingNumber && number2 <= startingNumber+4 && randomKind == myCard[0].Kind) || (number2 >= number && randomKind2 == randomKind) {
 			randomKind = byte(rand.Int()%4 + 1)
 			number = byte(rand.Int()%13 + 2)
 		}
-		myCard[6] = poker{number2, randomKind2}
+		myCard[6] = Def.Poker{number2, randomKind2}
 		myCard = randomShuffleArray(myCard)
 	} else {
 		if p {
 			var startingNumber byte = byte(rand.Int()%4 + 10)
-			myCard[0] = poker{startingNumber, randomKind}
-			myCard[1] = poker{startingNumber + 1, randomKind}
+			myCard[0] = Def.Poker{startingNumber, randomKind}
+			myCard[1] = Def.Poker{startingNumber + 1, randomKind}
 		} else {
 			var startingNumber byte = byte(rand.Int()%8 + 2)
-			myCard[0] = poker{startingNumber, randomKind}
-			myCard[1] = poker{startingNumber + 1, randomKind}
+			myCard[0] = Def.Poker{startingNumber, randomKind}
+			myCard[1] = Def.Poker{startingNumber + 1, randomKind}
 		}
 		var generateNum byte
 		var generateKind byte
@@ -699,7 +663,7 @@ func setStraightFlush(numberOfRound int, p bool) Cards {
 				generateKind = byte(rand.Int()%4 + 1)
 				if currentSize == 0 {
 					foundDuplicate = false
-					myCard[currentSize] = poker{generateNum, generateKind}
+					myCard[currentSize] = Def.Poker{generateNum, generateKind}
 					currentSize = 1
 				} else {
 					var index byte = 0
@@ -710,7 +674,7 @@ func setStraightFlush(numberOfRound int, p bool) Cards {
 					}
 					if index == currentSize {
 						foundDuplicate = false
-						myCard[currentSize] = poker{generateNum, generateKind}
+						myCard[currentSize] = Def.Poker{generateNum, generateKind}
 						currentSize += 1
 					}
 				}
@@ -720,35 +684,35 @@ func setStraightFlush(numberOfRound int, p bool) Cards {
 	return myCard
 }
 
-func set4aKind() Cards {
+func set4aKind() Def.Cards {
 	var number byte = byte(rand.Int()%13 + 2)
-	var myCard Cards = Cards{{number, 1}, {number, 2}, {number, 3}, {number, 4}}
+	var myCard Def.Cards = Def.Cards{{number, 1}, {number, 2}, {number, 3}, {number, 4}}
 	var randomKind byte = byte(rand.Int()%4 + 1)
 	for number == myCard[0].Num {
 		number = byte(rand.Int()%13 + 2)
 		randomKind = byte(rand.Int()%4 + 1)
 	}
-	myCard[4] = poker{number, randomKind}
+	myCard[4] = Def.Poker{number, randomKind}
 	var randomKind2 byte = byte(rand.Int()%4 + 1)
 	var number2 byte = byte(rand.Int()%13 + 2)
 	for number2 == myCard[0].Num || (number2 == myCard[4].Num && randomKind2 == myCard[4].Kind) {
 		randomKind2 = byte(rand.Int()%4 + 1)
 		number2 = byte(rand.Int()%13 + 2)
 	}
-	myCard[5] = poker{number2, randomKind2}
+	myCard[5] = Def.Poker{number2, randomKind2}
 	var number3 byte = byte(rand.Int()%13 + 2)
 	var randomKind3 byte = byte(rand.Int()%4 + 1)
 	for number3 == myCard[0].Num || (number3 == myCard[4].Num && randomKind3 == myCard[4].Kind) || (number3 == myCard[5].Num && randomKind3 == myCard[5].Kind) {
 		randomKind3 = byte(rand.Int()%4 + 1)
 		number3 = byte(rand.Int()%13 + 2)
 	}
-	myCard[6] = poker{number3, randomKind3}
+	myCard[6] = Def.Poker{number3, randomKind3}
 	//shuffle the card
 	myCard = randomShuffleArray(myCard)
 	return myCard
 }
 
-func setFullHouse() Cards {
+func setFullHouse() Def.Cards {
 	var number byte = byte(rand.Int()%13 + 2)
 	var number1 byte = byte(rand.Int()%13 + 2)
 	for number1 == number {
@@ -760,36 +724,36 @@ func setFullHouse() Cards {
 	for pickedKind1 == pickedKind2 {
 		pickedKind2 = byte(rand.Int()%4 + 1)
 	}
-	var myCard Cards = Cards{{number, (discardKind + 1) % 4}, {number, (discardKind + 2) % 4}, {number, (discardKind + 3) % 4}, {number1, pickedKind1}, {number1, pickedKind2}}
+	var myCard Def.Cards = Def.Cards{{number, (discardKind + 1) % 4}, {number, (discardKind + 2) % 4}, {number, (discardKind + 3) % 4}, {number1, pickedKind1}, {number1, pickedKind2}}
 	var randomKind2 byte = byte(rand.Int()%4 + 1)
 	var number2 byte = byte(rand.Int()%13 + 2)
 	for (number2 == number) || (number2 == number1) {
 		randomKind2 = byte(rand.Int()%4 + 1)
 		number2 = byte(rand.Int()%13 + 2)
 	}
-	myCard[5] = poker{number2, randomKind2}
+	myCard[5] = Def.Poker{number2, randomKind2}
 	var number3 byte = byte(rand.Int()%13 + 2)
 	var randomKind3 byte = byte(rand.Int()%4 + 1)
 	for (number3 == number) || (number3 == number1) || (number3 == number2 && randomKind3 == randomKind2) {
 		randomKind3 = byte(rand.Int()%4 + 1)
 		number3 = byte(rand.Int()%13 + 2)
 	}
-	myCard[6] = poker{number3, randomKind3}
+	myCard[6] = Def.Poker{number3, randomKind3}
 	//shuffle the card
 	myCard = randomShuffleArray(myCard)
 	return myCard
 }
 
-func setStraight(numberOfRound int, p bool) Cards {
+func setStraight(numberOfRound int, p bool) Def.Cards {
 	var randomKind byte = byte(rand.Int()%4 + 1)
-	var myCard Cards
+	var myCard Def.Cards
 	if numberOfRound > 1 {
 		var startingNumber byte = byte(rand.Int()%9 + 2)
 		var randomKind2 byte = byte(rand.Int()%4 + 1)
 		var randomKind3 byte = byte(rand.Int()%4 + 1)
 		var randomKind4 byte = byte(rand.Int()%4 + 1)
 		var randomKind5 byte = byte(rand.Int()%4 + 1)
-		myCard = Cards{{startingNumber, randomKind}, {startingNumber + 1, randomKind2}, {startingNumber + 2, randomKind3}, {startingNumber + 3, randomKind4}, {startingNumber + 4, randomKind5}}
+		myCard = Def.Cards{{startingNumber, randomKind}, {startingNumber + 1, randomKind2}, {startingNumber + 2, randomKind3}, {startingNumber + 3, randomKind4}, {startingNumber + 4, randomKind5}}
 		var number byte = byte(rand.Int()%13 + 2)
 		randomKind = byte(rand.Int()%4 + 1)
 		var duplicate bool = true
@@ -807,7 +771,7 @@ func setStraight(numberOfRound int, p bool) Cards {
 				randomKind = byte(rand.Int()%4 + 1)
 			}
 		}
-		myCard[5] = poker{number, randomKind}
+		myCard[5] = Def.Poker{number, randomKind}
 		number = byte(rand.Int()%13 + 2)
 		randomKind = byte(rand.Int()%4 + 1)
 		duplicate = true
@@ -825,7 +789,7 @@ func setStraight(numberOfRound int, p bool) Cards {
 				randomKind = byte(rand.Int()%4 + 1)
 			}
 		}
-		myCard[6] = poker{number, randomKind}
+		myCard[6] = Def.Poker{number, randomKind}
 		myCard = randomShuffleArray(myCard)
 	} else {
 		var randomKind2 byte = byte(rand.Int()%4 + 1)
@@ -834,12 +798,12 @@ func setStraight(numberOfRound int, p bool) Cards {
 		}
 		if p {
 			var startingNumber byte = byte(rand.Int()%4 + 10)
-			myCard[0] = poker{startingNumber, randomKind}
-			myCard[1] = poker{startingNumber + 1, randomKind2}
+			myCard[0] = Def.Poker{startingNumber, randomKind}
+			myCard[1] = Def.Poker{startingNumber + 1, randomKind2}
 		} else {
 			var startingNumber byte = byte(rand.Int()%8 + 2)
-			myCard[0] = poker{startingNumber, randomKind}
-			myCard[1] = poker{startingNumber + 1, randomKind2}
+			myCard[0] = Def.Poker{startingNumber, randomKind}
+			myCard[1] = Def.Poker{startingNumber + 1, randomKind2}
 		}
 		var generateNum byte
 		var generateKind byte
@@ -851,7 +815,7 @@ func setStraight(numberOfRound int, p bool) Cards {
 				generateKind = byte(rand.Int()%4 + 1)
 				if currentSize == 0 {
 					foundDuplicate = false
-					myCard[currentSize] = poker{generateNum, generateKind}
+					myCard[currentSize] = Def.Poker{generateNum, generateKind}
 					currentSize = 1
 				} else {
 					var index byte = 0
@@ -862,7 +826,7 @@ func setStraight(numberOfRound int, p bool) Cards {
 					}
 					if index == currentSize {
 						foundDuplicate = false
-						myCard[currentSize] = poker{generateNum, generateKind}
+						myCard[currentSize] = Def.Poker{generateNum, generateKind}
 						currentSize += 1
 					}
 				}
@@ -872,9 +836,9 @@ func setStraight(numberOfRound int, p bool) Cards {
 	return myCard
 }
 
-func setFlush(numberOfRound int, p bool) Cards {
+func setFlush(numberOfRound int, p bool) Def.Cards {
 	var randomKind byte = byte(rand.Int()%4 + 1)
-	var myCard Cards
+	var myCard Def.Cards
 	if numberOfRound > 1 {
 		var currentSize = 0
 		var generateNum byte
@@ -884,7 +848,7 @@ func setFlush(numberOfRound int, p bool) Cards {
 				generateNum = byte(rand.Int()%13 + 2)
 				if currentSize == 0 {
 					foundDuplicate = false
-					myCard[currentSize] = poker{generateNum, randomKind}
+					myCard[currentSize] = Def.Poker{generateNum, randomKind}
 					currentSize = 1
 				} else {
 					var index = 0
@@ -895,7 +859,7 @@ func setFlush(numberOfRound int, p bool) Cards {
 					}
 					if index == currentSize {
 						foundDuplicate = false
-						myCard[currentSize] = poker{generateNum, randomKind}
+						myCard[currentSize] = Def.Poker{generateNum, randomKind}
 						currentSize += 1
 					}
 				}
@@ -918,7 +882,7 @@ func setFlush(numberOfRound int, p bool) Cards {
 				randomKind = byte(rand.Int()%4 + 1)
 			}
 		}
-		myCard[5] = poker{number, randomKind}
+		myCard[5] = Def.Poker{number, randomKind}
 		number = byte(rand.Int()%13 + 2)
 		randomKind = byte(rand.Int()%4 + 1)
 		duplicate = true
@@ -936,7 +900,7 @@ func setFlush(numberOfRound int, p bool) Cards {
 				randomKind = byte(rand.Int()%4 + 1)
 			}
 		}
-		myCard[6] = poker{number, randomKind}
+		myCard[6] = Def.Poker{number, randomKind}
 		myCard = randomShuffleArray(myCard)
 	} else {
 		if p {
@@ -945,16 +909,16 @@ func setFlush(numberOfRound int, p bool) Cards {
 			for num2 == num1 {
 				num2 = byte(rand.Int()%13 + 2)
 			}
-			myCard[0] = poker{num1, randomKind}
-			myCard[1] = poker{num2, randomKind}
+			myCard[0] = Def.Poker{num1, randomKind}
+			myCard[1] = Def.Poker{num2, randomKind}
 		} else {
 			var num1 byte = byte(rand.Int()%9 + 2)
 			var num2 byte = byte(rand.Int()%9 + 2)
 			for num2 == num1 {
 				num2 = byte(rand.Int()%9 + 2)
 			}
-			myCard[0] = poker{num1, randomKind}
-			myCard[1] = poker{num2, randomKind}
+			myCard[0] = Def.Poker{num1, randomKind}
+			myCard[1] = Def.Poker{num2, randomKind}
 		}
 		var generateNum byte
 		var generateKind byte
@@ -972,7 +936,7 @@ func setFlush(numberOfRound int, p bool) Cards {
 				}
 				if index == currentSize {
 					foundDuplicate = false
-					myCard[currentSize] = poker{generateNum, generateKind}
+					myCard[currentSize] = Def.Poker{generateNum, generateKind}
 					currentSize += 1
 				}
 			}
@@ -981,10 +945,10 @@ func setFlush(numberOfRound int, p bool) Cards {
 	return myCard
 }
 
-func set3Kind() Cards {
+func set3Kind() Def.Cards {
 	var number byte = byte(rand.Int()%13 + 2)
 	var discardKind byte = byte(rand.Int()%4 + 1)
-	var myCard Cards = Cards{{number, (discardKind + 1) % 4}, {number, (discardKind + 2) % 4}, {number, (discardKind + 3) % 4}}
+	var myCard Def.Cards = Def.Cards{{number, (discardKind + 1) % 4}, {number, (discardKind + 2) % 4}, {number, (discardKind + 3) % 4}}
 	var generateNum byte
 	var generateKind byte
 	var currentSize byte = 3
@@ -1001,7 +965,7 @@ func set3Kind() Cards {
 			}
 			if index == currentSize {
 				foundDuplicate = false
-				myCard[currentSize] = poker{generateNum, generateKind}
+				myCard[currentSize] = Def.Poker{generateNum, generateKind}
 				currentSize += 1
 			}
 		}
@@ -1010,7 +974,7 @@ func set3Kind() Cards {
 	return myCard
 }
 
-func set2Pair2() Cards {
+func set2Pair2() Def.Cards {
 	var number byte = byte(rand.Int()%13 + 2)
 	var number2 byte = byte(rand.Int()%13 + 2)
 	for number == number2 {
@@ -1021,14 +985,14 @@ func set2Pair2() Cards {
 	for kind2 == kind1 {
 		kind2 = byte(rand.Int()%4 + 1)
 	}
-	var myCard Cards = Cards{{number, kind1}, {number, kind2}}
+	var myCard Def.Cards = Def.Cards{{number, kind1}, {number, kind2}}
 	kind1 = byte(rand.Int()%4 + 1)
 	kind2 = byte(rand.Int()%4 + 1)
 	for kind2 == kind1 {
 		kind2 = byte(rand.Int()%4 + 1)
 	}
-	myCard[2] = poker{number2, kind1}
-	myCard[3] = poker{number2, kind2}
+	myCard[2] = Def.Poker{number2, kind1}
+	myCard[3] = Def.Poker{number2, kind2}
 	var generateNum byte
 	var generateKind byte
 	var currentSize byte = 4
@@ -1045,7 +1009,7 @@ func set2Pair2() Cards {
 			}
 			if index == currentSize {
 				foundDuplicate = false
-				myCard[currentSize] = poker{generateNum, generateKind}
+				myCard[currentSize] = Def.Poker{generateNum, generateKind}
 				currentSize += 1
 			}
 		}
@@ -1054,8 +1018,8 @@ func set2Pair2() Cards {
 	return myCard
 }
 
-func setPair(numberOfRound int, p bool) Cards {
-	var myCard Cards
+func setPair(numberOfRound int, p bool) Def.Cards {
+	var myCard Def.Cards
 	if numberOfRound > 1 {
 		var number byte = byte(rand.Int()%13 + 2)
 		var kind1 byte = byte(rand.Int()%4 + 1)
@@ -1063,7 +1027,7 @@ func setPair(numberOfRound int, p bool) Cards {
 		for kind2 == kind1 {
 			kind2 = byte(rand.Int()%4 + 1)
 		}
-		myCard = Cards{{number, kind1}, {number, kind2}}
+		myCard = Def.Cards{{number, kind1}, {number, kind2}}
 		var generateNum byte
 		var generateKind byte
 		var currentSize byte = 2
@@ -1080,7 +1044,7 @@ func setPair(numberOfRound int, p bool) Cards {
 				}
 				if index == currentSize {
 					foundDuplicate = false
-					myCard[currentSize] = poker{generateNum, generateKind}
+					myCard[currentSize] = Def.Poker{generateNum, generateKind}
 					currentSize += 1
 				}
 			}
@@ -1095,7 +1059,7 @@ func setPair(numberOfRound int, p bool) Cards {
 			for kind2 == kind1 {
 				kind2 = byte(rand.Int()%4 + 1)
 			}
-			myCard = Cards{{number, kind1}, {number, kind2}}
+			myCard = Def.Cards{{number, kind1}, {number, kind2}}
 		} else {
 			var number byte = byte(rand.Int()%9 + 2)
 			var kind1 byte = byte(rand.Int()%4 + 1)
@@ -1103,7 +1067,7 @@ func setPair(numberOfRound int, p bool) Cards {
 			for kind2 == kind1 {
 				kind2 = byte(rand.Int()%4 + 1)
 			}
-			myCard = Cards{{number, kind1}, {number, kind2}}
+			myCard = Def.Cards{{number, kind1}, {number, kind2}}
 			var generateNum byte
 			var generateKind byte
 			var currentSize byte = 2
@@ -1120,7 +1084,7 @@ func setPair(numberOfRound int, p bool) Cards {
 					}
 					if index == currentSize {
 						foundDuplicate = false
-						myCard[currentSize] = poker{generateNum, generateKind}
+						myCard[currentSize] = Def.Poker{generateNum, generateKind}
 						currentSize += 1
 					}
 				}
@@ -1130,30 +1094,30 @@ func setPair(numberOfRound int, p bool) Cards {
 	return myCard
 }
 
-func setHighCard(numberOfRound int, p bool) Cards {
-	var myCard Cards
+func setHighCard(numberOfRound int, p bool) Def.Cards {
+	var myCard Def.Cards
 	if p {
 		var number byte = byte(rand.Int()%4 + 11)
 		var kind byte = byte(rand.Int()%4 + 1)
-		myCard[0] = poker{number, kind}
+		myCard[0] = Def.Poker{number, kind}
 		for (math.Abs(float64(number)-float64(myCard[0].Num)) == 1) || (number == myCard[0].Num) {
 			number = byte(rand.Int()%13 + 2)
 		}
 		for kind == myCard[0].Kind {
 			kind = byte(rand.Int()%4 + 1)
 		}
-		myCard[1] = poker{number, kind}
+		myCard[1] = Def.Poker{number, kind}
 	} else {
 		var number byte = byte(rand.Int()%9 + 2)
 		var kind byte = byte(rand.Int()%4 + 1)
-		myCard[0] = poker{number, kind}
+		myCard[0] = Def.Poker{number, kind}
 		for (math.Abs(float64(number)-float64(myCard[0].Num)) == 1) || (number == myCard[0].Num) {
 			number = byte(rand.Int()%9 + 2)
 		}
 		for kind == myCard[0].Kind {
 			kind = byte(rand.Int()%4 + 1)
 		}
-		myCard[1] = poker{number, kind}
+		myCard[1] = Def.Poker{number, kind}
 	}
 
 	var currentSize byte = 2
@@ -1171,11 +1135,11 @@ func setHighCard(numberOfRound int, p bool) Cards {
 						break
 					}
 				}
-				var temporaryCard Cards = myCard
-				temporaryCard[currentSize] = poker{generateNum, generateKind}
+				var temporaryCard Def.Cards = myCard
+				temporaryCard[currentSize] = Def.Poker{generateNum, generateKind}
 				if index == currentSize && HistoryAdd(temporaryCard) == "G" {
 					foundDuplicate = false
-					myCard[currentSize] = poker{generateNum, generateKind}
+					myCard[currentSize] = Def.Poker{generateNum, generateKind}
 					currentSize += 1
 				}
 			}
@@ -1192,11 +1156,11 @@ func setHighCard(numberOfRound int, p bool) Cards {
 							break
 						}
 					}
-					var temporaryCard Cards = myCard
-					temporaryCard[currentSize] = poker{generateNum, generateKind}
+					var temporaryCard Def.Cards = myCard
+					temporaryCard[currentSize] = Def.Poker{generateNum, generateKind}
 					if index == currentSize && HistoryAdd(temporaryCard) == "G" {
 						foundDuplicate = false
-						myCard[currentSize] = poker{generateNum, generateKind}
+						myCard[currentSize] = Def.Poker{generateNum, generateKind}
 						currentSize += 1
 					}
 				}
@@ -1213,11 +1177,11 @@ func setHighCard(numberOfRound int, p bool) Cards {
 								break
 							}
 						}
-						var temporaryCard Cards = myCard
-						temporaryCard[currentSize] = poker{generateNum, generateKind}
+						var temporaryCard Def.Cards = myCard
+						temporaryCard[currentSize] = Def.Poker{generateNum, generateKind}
 						if index == currentSize && HistoryAdd(temporaryCard) == "G" {
 							foundDuplicate = false
-							myCard[currentSize] = poker{generateNum, generateKind}
+							myCard[currentSize] = Def.Poker{generateNum, generateKind}
 							currentSize += 1
 						}
 					}
@@ -1241,7 +1205,7 @@ func setHighCard(numberOfRound int, p bool) Cards {
 			}
 			if index == currentSize {
 				foundDuplicate = false
-				myCard[currentSize] = poker{generateNum, generateKind}
+				myCard[currentSize] = Def.Poker{generateNum, generateKind}
 				currentSize += 1
 			}
 		}
@@ -1249,7 +1213,7 @@ func setHighCard(numberOfRound int, p bool) Cards {
 	return myCard
 }
 
-func checker(mycard Cards) string {
+func checker(mycard Def.Cards) string {
 	sameSuit := (mycard[0].Kind == mycard[1].Kind)
 	inOrder := (int(mycard[0].Num) - int(mycard[1].Num)) == 1
 	if !inOrder {
@@ -1294,7 +1258,7 @@ func checker(mycard Cards) string {
 	}
 }
 
-func GenerateOpponentCard(myCard Cards) (opponentCard Cards) {
+func GenerateOpponentCard(myCard Def.Cards) (opponentCard Def.Cards) {
 	//set community card
 	opponentCard[2] = myCard[2]
 	opponentCard[3] = myCard[3]
@@ -1317,7 +1281,7 @@ func GenerateOpponentCard(myCard Cards) (opponentCard Cards) {
 		if index == 7 {
 			if (generateNum != myCard[0].Num || generateKind != myCard[0].Kind) && (generateNum != myCard[1].Num || generateKind != myCard[1].Kind) {
 				foundDuplicate = false
-				opponentCard[1] = poker{generateNum, generateKind}
+				opponentCard[1] = Def.Poker{generateNum, generateKind}
 			}
 		}
 	}
@@ -1334,7 +1298,7 @@ func GenerateOpponentCard(myCard Cards) (opponentCard Cards) {
 		if index == 7 {
 			if (generateNum != myCard[0].Num || generateKind != myCard[0].Kind) && (generateNum != myCard[1].Num || generateKind != myCard[1].Kind) {
 				foundDuplicate = false
-				opponentCard[0] = poker{generateNum, generateKind}
+				opponentCard[0] = Def.Poker{generateNum, generateKind}
 			}
 		}
 	}
@@ -1342,7 +1306,7 @@ func GenerateOpponentCard(myCard Cards) (opponentCard Cards) {
 }
 
 func AllInWinner(lastStrength string) (winner byte) {
-	var myCard Cards
+	var myCard Def.Cards
 	var normalizingSum float64 = 0
 	if lastStrength == "A" {
 		normalizingSum = ROYAL_PROB + STRFLUSH_PROB
@@ -1398,7 +1362,7 @@ func AllInWinner(lastStrength string) (winner byte) {
 		myCard = setHighCard(1, false)
 	}
 
-	var opponentCard Cards = GenerateOpponentCard(myCard)
+	var opponentCard Def.Cards = GenerateOpponentCard(myCard)
 	myGrade := HistoryAdd(myCard)
 	opponentGrade := HistoryAdd(opponentCard)
 	if myGrade < opponentGrade {

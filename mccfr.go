@@ -29,6 +29,8 @@ type MCCFR struct {
 	sampledActions   map[string]int
 }
 
+const eps = 1e-3
+
 func NewMCCFR(strategyProfile StrategyProfile, sampler Sampler) *MCCFR {
 	return &MCCFR{
 		strategyProfile: strategyProfile,
@@ -163,4 +165,12 @@ func sampleOne(pv []float32, x float32) int {
 	}
 
 	return len(pv) - 1
+}
+
+func getSign(player1, player2 int) float32 {
+	if player1 == player2 {
+		return 1.0
+	}
+
+	return -1.0
 }

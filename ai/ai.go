@@ -8,13 +8,16 @@ import (
 	"time"
 
 	"github.com/tam0705/go-cfr"
+	"github.com/tam0705/go-cfr/def"
 	"github.com/tam0705/go-cfr/holdem"
 	"github.com/tam0705/go-cfr/sampling"
 	"github.com/tam0705/go-cfr/tree"
 )
 
+type EnemyType int
+
 const (
-	PESSIMISTIC cfr.EnemyType = iota
+	PESSIMISTIC EnemyType = iota
 	NEUTRAL
 	CONFIDENT
 )
@@ -46,12 +49,12 @@ var policy *cfr.PolicyTable
 var es *sampling.AverageStrategySampler
 var CFR *cfr.MCCFR
 
-var enemyType cfr.EnemyType = NEUTRAL
+var enemyType EnemyType = NEUTRAL
 
 var hasInit bool = false
 
 // Implementation of AI Interface
-func Init(enemy cfr.EnemyType, policyFileName string) {
+func Init(enemy EnemyType, policyFileName string) {
 	rand.Seed(time.Now().UnixNano())
 
 	policy = cfr.NewPolicyTable(cfr.DiscountParams{ LinearWeighting: true })
@@ -86,7 +89,7 @@ func Run(nIter int) float64 {
 	return expectedValue
 }
 
-func GetDecision(Informations holdem.RobotInherit, OpponentPreviousAction holdem.PlayerAction, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (holdem.PlayerAction, float64, string) {
+func GetDecision(Informations Def.RobotInherit, OpponentPreviousAction Def.PlayerAction, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
 	return holdem.GetDecision(Informations, OpponentPreviousAction, Standard, Total, RaiseDiff, AllInBound, myHistory)
 }
 
