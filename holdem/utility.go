@@ -32,7 +32,7 @@ var AllinBound float64      // 如果要Allin，則跟到標準後，只能再�
 const (
 	SMALLBLIND_TRAIN int64 = 1
 	CALL_TRAIN       int64 = 2
-	ALLIN_TRAIN      int64 = 20
+	ALLIN_TRAIN      int64 = 200
 )
 
 func minInt(a, b int64) int64 {
@@ -80,17 +80,149 @@ func GetRaiseAmount(ConfidenceAmount, Standard, RaiseDiff, AllInBound float64, I
 	return raiseRatio
 }
 
-//OpponentPreviousAction = set to PLAYER_ACTION_FOLD if opponent has not played this round
-func GetDecision(Informations Def.RobotInherit, OpponentPreviousAction Def.PlayerAction, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
-	var currentRound byte = GetCurrentRound(Informations.Card)
+func OpponentRaiseEncoding(rp, raiseNum int) (res string) {
+	res = ""
+	switch rp {
+	case 8:
+		switch raiseNum {
+		case 4:
+			res = "I"
+		case 3:
+			res = "J"
+		case 2:
+			res = "K"
+		case 1:
+			res = "L"
+		case 0:
+			res = "!"
+		default:
+			res = "H"
+		}
+	case 7:
+		switch raiseNum {
+		case 4:
+			res = "N"
+		case 3:
+			res = "O"
+		case 2:
+			res = "P"
+		case 1:
+			res = "Q"
+		case 0:
+			res = "@"
+		default:
+			res = "M"
+		}
+	case 6:
+		switch raiseNum {
+		case 4:
+			res = "S"
+		case 3:
+			res = "T"
+		case 2:
+			res = "U"
+		case 1:
+			res = "V"
+		case 0:
+			res = "#"
+		default:
+			res = "R"
+		}
+	case 5:
+		switch raiseNum {
+		case 4:
+			res = "X"
+		case 3:
+			res = "Y"
+		case 2:
+			res = "Z"
+		case 1:
+			res = "b"
+		case 0:
+			res = "$"
+		default:
+			res = "W"
+		}
+	case 4:
+		switch raiseNum {
+		case 4:
+			res = "e"
+		case 3:
+			res = "g"
+		case 2:
+			res = "h"
+		case 1:
+			res = "i"
+		case 0:
+			res = "%"
+		default:
+			res = "d"
+		}
+	case 3:
+		switch raiseNum {
+		case 3:
+			res = "k"
+		case 2:
+			res = "l"
+		case 1:
+			res = "m"
+		case 0:
+			res = "^"
+		default:
+			res = "j"
+		}
+	case 2:
+		switch raiseNum {
+		case 3:
+			res = "o"
+		case 2:
+			res = "p"
+		case 1:
+			res = "q"
+		case 0:
+			res = "&"
+		default:
+			res = "n"
+		}
+	default:
+		switch raiseNum {
+		case 2:
+			res = "t"
+		case 1:
+			res = "u"
+		case 0:
+			res = "*"
+		default:
+			res = "s"
+		}
+	}
+	return 
+}
 
+func OpponentRaiseDecoding(ltr string) (intAmount int) {
+	switch  ltr{
+	case "H", "M", "R", "W", "d":
+		intAmount = 5
+	case "I", "N", "S", "X", "e", "j", "n":
+		intAmount = 4
+	case "J", "O", "T", "Y", "g", "k", "o", "r":
+		intAmount = 3
+	case "K", "P", "Z", "h", "l", "p", "s": 
+		intAmount = 2
+	case "t", "q", "m", "i", "b", "V", "Q", "L":
+		intAmount = 1
+	case "!", "@", "#", "$", "%", "^", "&", "*":
+		intAmount = 0
+	}
+	return
+}
+
+//OpponentPreviousAction = set to PLAYER_ACTION_FOLD if opponent has not played this round
+func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
+	var currentRound byte = GetCurrentRound(Informations.Card)
 	if len(myHistory) == 3*int(currentRound) {
 		//check whether round repeats, if it does, clean history
-		if OpponentPreviousAction == Def.PLAYER_ACTION_ALLIN {
-			myHistory = myHistory[0:len(myHistory)-2] + "a" //discard the last
-		} else {
-			myHistory = myHistory[0:len(myHistory)-2] + "r" //discard the last
-		}
+		myHistory = myHistory[0:len(myHistory)-2] + OpponentRaiseEncoding(int(Informations.PlayerNum) - 1, int(Informations.RaiseCounter - Informations.RaiseSelf))
 	} else {
 		//every new round, analyze handstrength
 		if len(myHistory) == 0 {
@@ -99,28 +231,18 @@ func GetDecision(Informations Def.RobotInherit, OpponentPreviousAction Def.Playe
 			myHistory += HistoryAdd(Informations.Card)
 		}
 
-		//check whether opponent has played or not
-		//since it is not possible this function is called when one of them has fold, so
-		//set as fold if opponent has not moved
-		if OpponentPreviousAction == Def.PLAYER_ACTION_ALLIN {
-			myHistory += "a"
-		} else if OpponentPreviousAction == Def.PLAYER_ACTION_RAISE {
-			myHistory += "r"
-		} else {
-			myHistory += "c"
-		}
+		myHistory += OpponentRaiseEncoding(int(Informations.PlayerNum) - 1, int(Informations.RaiseCounter - Informations.RaiseSelf))
 	}
 
 	//historyReady
-	var strategyType byte
 	var myStrategy []float64
-	myStrategy, strategyType = GetStrategy(myHistory)
+	myStrategy = GetStrategy(myHistory)
 
 	//Fold - Call - Check - Fold - Raise, It is always possible for Folding
 	var myAvailableAction [5]string = [5]string{"1", "0", "0", "0", "1"}
 	//consider the available move for call/check, cant happen at same time
 	if Standard == Informations.BetPos {
-		myAvailableAction[1] = "1"
+		myAvailableAction[1] = "1" //return
 	} else if Standard < Informations.ContestMoney {
 		myAvailableAction[2] = "1"
 	}
@@ -133,76 +255,63 @@ func GetDecision(Informations Def.RobotInherit, OpponentPreviousAction Def.Playe
 	randomFloat := rand.Float64()
 	myAction := Def.PLAYER_ACTION_CALL
 	var myBet float64 = 0.0
-	if strategyType == 2 {
-		//only fold and all in
+	//fold call/check raise and all in
+	//check the availability
+	if myAvailableAction[1] == "0" && myAvailableAction[2] == "0" {
+		myStrategy[1] = 0.0
+	}
+	if myAvailableAction[3] == "0" {
+		myStrategy[2] = 0.0
+	}
+	if myAvailableAction[4] == "0" {
+		myStrategy[3] = 0.0
+	}
+
+	//if there is a bit of money left then let the call get higher
+	//compared to raise
+	if Standard-Informations.BetPos >= 0.5*Informations.ContestMoney {
+		halfPercentage := myStrategy[2] / 2
+		myStrategy[2] -= halfPercentage
+		myStrategy[1] += halfPercentage
+	}
+
+	//normalize the remaining strategy
+	var normalizingSum float64 = 0.0
+	for a := 0; a < 4; a++ {
+		normalizingSum += myStrategy[a]
+	}
+
+	if normalizingSum == 0 {
+		myAction = Def.PLAYER_ACTION_FOLD
+		myBet = 0.0
+		myHistory += "f"
+	} else {
+		for a := 0; a < 4; a++ {
+			myStrategy[a] /= normalizingSum
+		}
+
 		if randomFloat < myStrategy[0] {
 			myAction = Def.PLAYER_ACTION_FOLD
 			myBet = 0.0
-			myHistory = myHistory + "f"
+			myHistory += "f"
+		} else if randomFloat < myStrategy[0]+myStrategy[1] {
+			if myAvailableAction[1] == "1" {
+				myAction = Def.PLAYER_ACTION_CHECK
+				myBet = 0.0
+				myHistory += "c"
+			} else {
+				myAction = Def.PLAYER_ACTION_CALL
+				myBet = Standard - Informations.BetPos
+				myHistory += "c"
+			}
+		} else if randomFloat < myStrategy[0]+myStrategy[1]+myStrategy[2] {
+			myAction = Def.PLAYER_ACTION_RAISE
+			myBet = GetRaiseAmount(myStrategy[2], Standard, RaiseDiff, AllInBound, Informations)
+			myHistory += "r"
 		} else {
 			myAction = Def.PLAYER_ACTION_ALLIN
 			myBet = math.Min(AllInBound-Informations.BetPos, Informations.ContestMoney)
-			myHistory = myHistory + "a"
-		}
-	} else if strategyType == 4 {
-		//fold call/check raise and all in
-		//check the availability
-		if myAvailableAction[1] == "0" && myAvailableAction[2] == "0" {
-			myStrategy[1] = 0.0
-		}
-		if myAvailableAction[3] == "0" {
-			myStrategy[2] = 0.0
-		}
-		if myAvailableAction[4] == "0" {
-			myStrategy[3] = 0.0
-		}
-
-		//if there is a bit of money left then let the call get higher
-		//compared to raise
-		if Standard-Informations.BetPos >= 0.5*Informations.ContestMoney {
-			halfPercentage := myStrategy[2] / 2
-			myStrategy[2] -= halfPercentage
-			myStrategy[1] += halfPercentage
-		}
-
-		//normalize the remaining strategy
-		var normalizingSum float64 = 0.0
-		for a := 0; a < 4; a++ {
-			normalizingSum += myStrategy[a]
-		}
-
-		if normalizingSum == 0 {
-			myAction = Def.PLAYER_ACTION_FOLD
-			myBet = 0.0
-			myHistory += "f"
-		} else {
-			for a := 0; a < 4; a++ {
-				myStrategy[a] /= normalizingSum
-			}
-
-			if randomFloat < myStrategy[0] {
-				myAction = Def.PLAYER_ACTION_FOLD
-				myBet = 0.0
-				myHistory += "h"
-			} else if randomFloat < myStrategy[0]+myStrategy[1] {
-				if myAvailableAction[1] == "1" {
-					myAction = Def.PLAYER_ACTION_CHECK
-					myBet = 0.0
-					myHistory += "c"
-				} else {
-					myAction = Def.PLAYER_ACTION_CALL
-					myBet = Standard - Informations.BetPos
-					myHistory += "c"
-				}
-			} else if randomFloat < myStrategy[0]+myStrategy[1] {
-				myAction = Def.PLAYER_ACTION_RAISE
-				myBet = GetRaiseAmount(myStrategy[2], Standard, RaiseDiff, AllInBound, Informations)
-				myHistory += "r"
-			} else {
-				myAction = Def.PLAYER_ACTION_ALLIN
-				myBet = math.Min(AllInBound-Informations.BetPos, Informations.ContestMoney)
-				myHistory += "a"
-			}
+			myHistory += "a"
 		}
 	}
 	return myAction, myBet, myHistory
@@ -1305,98 +1414,6 @@ func GenerateOpponentCard(myCard Def.Cards) (opponentCard Def.Cards) {
 	return
 }
 
-func AllInWinner(lastStrength string) (winner byte) {
-	var myCard Def.Cards
-	var normalizingSum float64 = 0
-	if lastStrength == "A" {
-		normalizingSum = ROYAL_PROB + STRFLUSH_PROB
-		var randFloat = rand.Float64()
-		if randFloat < ROYAL_PROB/normalizingSum {
-			myCard = setRoyal()
-		} else {
-			myCard = setStraightFlush(4, false)
-		}
-	} else if lastStrength == "B" {
-		normalizingSum = FOURKIND_PROB + FULLH_PROB
-		var randFloat = rand.Float64()
-		if randFloat < FOURKIND_PROB/normalizingSum {
-			myCard = set4aKind()
-		} else {
-			myCard = setFullHouse()
-		}
-	} else if lastStrength == "C" {
-		normalizingSum = STRAIGHT_PROB + FLUSH_PROB
-		var randFloat = rand.Float64()
-		if randFloat < STRAIGHT_PROB/normalizingSum {
-			myCard = setStraight(4, false)
-		} else {
-			myCard = setFlush(4, false)
-		}
-	} else if lastStrength == "D" {
-		myCard = set3Kind()
-	} else if lastStrength == "E" {
-		myCard = set2Pair2()
-	} else if lastStrength == "F" {
-		myCard = setPair(5, false)
-	} else if lastStrength == "G" {
-		myCard = setHighCard(5, false)
-	} else if lastStrength == "0" {
-		myCard = setStraightFlush(1, true)
-	} else if lastStrength == "1" {
-		myCard = setStraightFlush(1, false)
-	} else if lastStrength == "2" {
-		myCard = setPair(1, true)
-	} else if lastStrength == "3" {
-		myCard = setPair(1, false)
-	} else if lastStrength == "4" {
-		myCard = setFlush(1, true)
-	} else if lastStrength == "5" {
-		myCard = setFlush(1, false)
-	} else if lastStrength == "6" {
-		myCard = setStraight(1, true)
-	} else if lastStrength == "7" {
-		myCard = setStraight(1, false)
-	} else if lastStrength == "8" {
-		myCard = setHighCard(1, true)
-	} else if lastStrength == "9" {
-		myCard = setHighCard(1, false)
-	}
-
-	var opponentCard Def.Cards = GenerateOpponentCard(myCard)
-	myGrade := HistoryAdd(myCard)
-	opponentGrade := HistoryAdd(opponentCard)
-	if myGrade < opponentGrade {
-		winner = 2
-	} else if myGrade > opponentGrade {
-		winner = 0
-	} else {
-		if myGrade == "G" {
-			myCard = ArrangeCards(myCard)
-			opponentCard = ArrangeCards(opponentCard)
-			for a := 6; a > -1; a-- {
-				if opponentCard[a].Num > myCard[a].Num {
-					winner = 0
-					return
-				} else if opponentCard[a].Num < myCard[a].Num {
-					winner = 2
-					return
-				} else {
-					if opponentCard[a].Kind > myCard[a].Kind {
-						winner = 0
-						return
-					} else if opponentCard[a].Kind < myCard[a].Kind {
-						winner = 2
-						return
-					}
-				}
-			}
-		} else {
-			winner = 1
-		}
-	}
-	return
-}
-
 func printit(val int64, toPrint string) {
 	if val < 0 {
 		fmt.Println(toPrint)
@@ -1408,70 +1425,77 @@ func RewardCounter(history string, raiseHistory []float64, raiseSize int64) (Tot
 	var AllinBound int64 = ALLIN_TRAIN
 	Total = 3 * SMALLBLIND_TRAIN
 	var Standard int64 = CALL_TRAIN
-	var enemyBetPos int64 = 1 * SMALLBLIND_TRAIN
+	//var enemyBetPos int64 = 1 * SMALLBLIND_TRAIN
 	BetPos = 2 * SMALLBLIND_TRAIN
 	var numRaise int64 = 0
 	var raiseDiff int64 = Standard
 	for i := 1; i < len(history); i++ {
 		if history[i] == 'c' {
-			if i%3 == 1 {
-				//enemy
-				Total += maxInt(Standard-enemyBetPos, 0)
-				enemyBetPos = Standard
-			} else {
-				//mine
-				Total += maxInt(Standard-BetPos, 0)
-				BetPos = Standard
-			}
+			//mine
+			Total += maxInt(Standard-BetPos, 0)
+			BetPos = Standard
 		} else if history[i] == 'r' {
-			if i%3 == 1 {
-				//enemy
-				var enemyRaise int64
-				if raiseHistory[numRaise] >= 0.6 {
-					//freely generate without limit
-					enemyRaise = Standard + raiseDiff*2
-				} else if raiseHistory[numRaise] >= 0.4 {
-					enemyRaise = Standard + int64(float64(raiseDiff)*1.75)
-				} else if raiseHistory[numRaise] >= 0.3 {
-					enemyRaise = Standard + int64(float64(raiseDiff)*1.25)
-				} else {
-					enemyRaise = Standard + raiseDiff
-				}
-				raiseDiff = enemyRaise - Standard
-				Total += enemyRaise
-				Standard = enemyRaise
-				enemyBetPos = enemyRaise
-				numRaise += 1
+			//mine
+			var myRaise int64
+			if raiseHistory[numRaise] >= 0.6 {
+				//freely generate without limit
+				myRaise = Standard + raiseDiff*2
+			} else if raiseHistory[numRaise] >= 0.4 {
+				myRaise = Standard + int64(float64(raiseDiff)*1.75)
+			} else if raiseHistory[numRaise] >= 0.3 {
+				myRaise = Standard + int64(float64(raiseDiff)*1.25)
 			} else {
-				//mine
-				var myRaise int64
-				if raiseHistory[numRaise] >= 0.6 {
-					//freely generate without limit
-					myRaise = Standard + raiseDiff*2
-				} else if raiseHistory[numRaise] >= 0.4 {
-					myRaise = Standard + int64(float64(raiseDiff)*1.75)
-				} else if raiseHistory[numRaise] >= 0.3 {
-					myRaise = Standard + int64(float64(raiseDiff)*1.25)
-				} else {
-					myRaise = Standard + raiseDiff
-				}
-				raiseDiff = myRaise - Standard
-				Total += myRaise
-				Standard = myRaise
-				enemyBetPos = myRaise
-				numRaise += 1
+				myRaise = Standard + raiseDiff
 			}
+			raiseDiff = myRaise - Standard
+			Total += myRaise
+			Standard = myRaise
+			BetPos = myRaise
+			numRaise += 1
 		} else if history[i] == 'a' {
-			if i%3 == 1 {
-				//enemy
-				Total += AllinBound
-				enemyBetPos += AllinBound
-				Standard = minInt(enemyBetPos, Standard)
+			//mine
+			Total += AllinBound
+			BetPos += AllinBound
+			Standard = minInt(BetPos, Standard)
+		} else if (i%1 == 1){
+			var remainingPlayer int64;
+			if (history[i] >= "H" && history[i] <= "L") || history[i] == "!"){
+				remainingPlayer = 8
+			} else if (history[i] >= "M" && history[i] <= "Q") ||  history[i] == "@"){
+				remainingPlayer = 7
+			} else if (history[i] >= "R" && history[i] <= "V") ||  history[i] == "#"){
+				remainingPlayer = 6
+			} else if (history[i] >= "W" && history[i] <= "Z") ||  history[i] == "b" || history[i] == "$"){
+				remainingPlayer = 5
+			} else if (history[i] >= "d" && history[i] <= "i") || history[i] == "%"){
+				remainingPlayer = 4
+			} else if (history[i] >= "j" && history[i] <= "m") || history[i] == "^"){
+				remainingPlayer = 3
+			} else if (history[i] >= "n" && history[i] <= "q") || history[i] == "&"){
+				remainingPlayer = 2
 			} else {
-				//mine
-				Total += AllinBound
-				BetPos += AllinBound
-				Standard = minInt(BetPos, Standard)
+				remainingPlayer = 1
+			}
+			raiseNumber := OpponentRaiseDecoding(history[i])
+			remainingAct = make([]byte, remainingPlayer)
+			for j:=0; j<raiseNumber; j++{
+				randIndex := rand.Int() % int(remainingPlayer)
+				if remainingAct[randIndex] {
+					j -= 1
+				}else{
+					remainingAct[randIndex] = 1
+				}
+			}
+
+			for j:=0; j<int(remainingPlayer); j++{
+				if remainingAct[randIndex]{
+					enemyRaise := int64(float64(raiseDiff)*1.5)
+					raiseDiff = enemyRaise - Standard
+					Total += enemyRaise
+					Standard = enemyRaise
+				}else{
+					total += standard
+				}
 			}
 		}
 	}
@@ -1546,7 +1570,7 @@ func GenerateAllOpponentCard(myCard Def.Cards, remainingEnemy int, enemySlices [
 
 //only for training purposes
 //0 is lose, 1 is draw, 2 is win
-func AllInMulti(lastStrength string, remainingOpponent int) (winner byte) {
+func AllInWinner(lastStrength string, remainingOpponent int) (winner byte) {
 	var myCard Def.Cards
 	var enemyCardSlice = make([]Def.Cards, remainingOpponent)
 	var normalizingSum float64 = 0
