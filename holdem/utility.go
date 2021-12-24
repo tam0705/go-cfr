@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/tam0705/go-cfr/def"
+	Def "github.com/tam0705/go-cfr/def"
 )
 
 const (
@@ -23,10 +23,10 @@ const (
 
 var SeatIdx Def.SeatIndex   // Seat index
 var Action Def.PlayerAction // 被通知的玩家能夠行動的方式(複合的Flag) / the move availble for current player?
-var Standard float64    // 現在壓注的標準
-var Total float64       // 現在壓注的總額
-var RaiseDiff float64   // 如果要加注，則跟到標準後，要大餘等於這個加注差值
-var AllinBound float64  // 如果要Allin，則跟到標準後，只能再加這個數值
+var Standard float64        // 現在壓注的標準
+var Total float64           // 現在壓注的總額
+var RaiseDiff float64       // 如果要加注，則跟到標準後，要大餘等於這個加注差值
+var AllinBound float64      // 如果要Allin，則跟到標準後，只能再加這個數值
 
 //for training purposes
 const (
