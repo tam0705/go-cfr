@@ -209,8 +209,8 @@ func GetDecision(Informations Def.RobotInherit, OpponentPreviousAction Def.Playe
 }
 
 func ArrangeCards(mycard Def.Cards) Def.Cards {
-	for i := 0; i < 6; i++ {
-		for j := 0; j < 6-i; j++ {
+	for i := 0; i < 6-1; i++ {
+		for j := 0; j < 6-i-1; j++ {
 			if mycard[j+1].Kind == 0 && mycard[j+1].Num == 0 {
 				continue
 			}
@@ -1473,6 +1473,169 @@ func RewardCounter(history string, raiseHistory []float64, raiseSize int64) (Tot
 				BetPos += AllinBound
 				Standard = minInt(BetPos, Standard)
 			}
+		}
+	}
+	return
+}
+
+func ArrangeSlice(cardSlice []Def.Poker, size int) {
+	for i := 0; i < size-1; i++ {
+		for j := 0; j < size-i-1; j++ {
+			if cardSlice[j].Num > cardSlice[j+1].Num {
+				var temp Def.Poker = cardSlice[j]
+				cardSlice[j] = cardSlice[j+1]
+				cardSlice[j+1] = temp
+			} else if cardSlice[j].Num == cardSlice[j+1].Num && cardSlice[j].Kind == cardSlice[j+1].Kind {
+				var temp Def.Poker = cardSlice[j]
+				cardSlice[j] = cardSlice[j+1]
+				cardSlice[j+1] = temp
+			}
+		}
+	}
+	return
+}
+
+func GenerateAllOpponentCard(myCard Def.Cards, remainingEnemy int, enemySlices []Def.Cards) {
+	//set community card
+	for i := 0; i < remainingEnemy; i++ {
+		//set the community card of each enemy
+		enemySlices[i][2] = myCard[2]
+		enemySlices[i][3] = myCard[3]
+		enemySlices[i][4] = myCard[4]
+		enemySlices[i][5] = myCard[5]
+		enemySlices[i][6] = myCard[6]
+
+	}
+
+	var generatedCards [23]Def.Poker
+	goal := (remainingEnemy+1)*2 + 5
+	currentStart := 7
+	generatedCards[0] = myCard[0]
+	generatedCards[1] = myCard[1]
+	generatedCards[2] = myCard[2]
+	generatedCards[3] = myCard[3]
+	generatedCards[4] = myCard[4]
+	generatedCards[5] = myCard[5]
+	generatedCards[6] = myCard[6]
+	ArrangeSlice(generatedCards[:], 7)
+	for ; currentStart < goal; currentStart++ {
+		var foundDuplicate = true
+		for foundDuplicate {
+			newCard := Def.Poker{byte(rand.Int()%13 + 2), byte(rand.Int()%4 + 1)}
+			for index := 0; index < currentStart; index++ {
+				if generatedCards[index].Num == newCard.Num && generatedCards[index].Kind == newCard.Kind {
+					break
+				}
+				if newCard.Num > generatedCards[index].Num || (newCard.Num == generatedCards[index].Num && newCard.Kind > generatedCards[index].Kind) || index == (currentStart-1) {
+					foundDuplicate = false
+					break
+				}
+			}
+			if !foundDuplicate {
+				generatedCards[currentStart] = newCard
+				currentStart += 1
+				currentEnemy := int((currentStart - 7) / 2)
+				currentIndex := (currentStart - 7) % 2
+				enemySlices[currentEnemy][currentIndex] = newCard
+				ArrangeSlice(generatedCards[:], currentStart)
+			}
+		}
+	}
+	return
+}
+
+//only for training purposes
+//0 is lose, 1 is draw, 2 is win
+func AllInMulti(lastStrength string, remainingOpponent int) (winner byte) {
+	var myCard Def.Cards
+	var enemyCardSlice = make([]Def.Cards, remainingOpponent)
+	var normalizingSum float64 = 0
+	if lastStrength == "A" {
+		normalizingSum = ROYAL_PROB + STRFLUSH_PROB
+		var randFloat = rand.Float64()
+		if randFloat < ROYAL_PROB/normalizingSum {
+			myCard = setRoyal()
+		} else {
+			myCard = setStraightFlush(4, false)
+		}
+	} else if lastStrength == "B" {
+		normalizingSum = FOURKIND_PROB + FULLH_PROB
+		var randFloat = rand.Float64()
+		if randFloat < FOURKIND_PROB/normalizingSum {
+			myCard = set4aKind()
+		} else {
+			myCard = setFullHouse()
+		}
+	} else if lastStrength == "C" {
+		normalizingSum = STRAIGHT_PROB + FLUSH_PROB
+		var randFloat = rand.Float64()
+		if randFloat < STRAIGHT_PROB/normalizingSum {
+			myCard = setStraight(4, false)
+		} else {
+			myCard = setFlush(4, false)
+		}
+	} else if lastStrength == "D" {
+		myCard = set3Kind()
+	} else if lastStrength == "E" {
+		myCard = set2Pair2()
+	} else if lastStrength == "F" {
+		myCard = setPair(5, false)
+	} else if lastStrength == "G" {
+		myCard = setHighCard(5, false)
+	} else if lastStrength == "0" {
+		myCard = setStraightFlush(1, true)
+	} else if lastStrength == "1" {
+		myCard = setStraightFlush(1, false)
+	} else if lastStrength == "2" {
+		myCard = setPair(1, true)
+	} else if lastStrength == "3" {
+		myCard = setPair(1, false)
+	} else if lastStrength == "4" {
+		myCard = setFlush(1, true)
+	} else if lastStrength == "5" {
+		myCard = setFlush(1, false)
+	} else if lastStrength == "6" {
+		myCard = setStraight(1, true)
+	} else if lastStrength == "7" {
+		myCard = setStraight(1, false)
+	} else if lastStrength == "8" {
+		myCard = setHighCard(1, true)
+	} else if lastStrength == "9" {
+		myCard = setHighCard(1, false)
+	}
+
+	GenerateAllOpponentCard(myCard, remainingOpponent, enemyCardSlice[:])
+	myGrade := HistoryAdd(myCard)
+	var winGrade string = "H"
+	var enemyMax Def.Poker = Def.Poker{0, 0}
+	for i := 0; i < remainingOpponent; i++ {
+		generated := HistoryAdd(enemyCardSlice[i])
+		enemyCardSlice[i] = ArrangeCards(enemyCardSlice[i])
+		if winGrade > generated {
+			winGrade = generated
+		}
+		if enemyMax.Num > enemyCardSlice[i][6].Num || (enemyMax.Num == enemyCardSlice[i][6].Num && enemyMax.Kind > enemyCardSlice[i][6].Kind) {
+			enemyMax = enemyCardSlice[i][6]
+		}
+	}
+
+	if myGrade < winGrade {
+		winner = 2
+	} else if myGrade > winGrade {
+		winner = 0
+	} else {
+		if myGrade == "G" {
+			myCard = ArrangeCards(myCard)
+			var myMax Def.Poker = myCard[6]
+			if enemyMax.Num > myMax.Num || (enemyMax.Num == myMax.Num && enemyMax.Kind > myMax.Kind) {
+				winner = 0
+			} else if enemyMax.Num < myMax.Num || (enemyMax.Num == myMax.Num && enemyMax.Kind < myMax.Kind) {
+				winner = 2
+			} else {
+				winner = 1
+			}
+		} else {
+			winner = 1
 		}
 	}
 	return
