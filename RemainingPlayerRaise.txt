@@ -39,6 +39,6 @@
  - 2 raise : 'p'
  - 1 or 0 raise : 'q'
 1 player
- - 3 raise/above: 'r'
- - 2 raise : 's'
- - 1 or 0 raise : 't'
+ - 3 raise/above: 's'
+ - 2 raise : 't'
+ - 1 or 0 raise : 'u'
