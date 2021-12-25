@@ -81,9 +81,13 @@ func Run(nIter int) float64 {
 	}
 
 	expectedValue := 0.0
+	onePercentile := nIter / 100
+	if (onePercentile == 0) {
+		onePercentile = 1
+	}
 	for i := 1; i <= nIter; i++ {
 		expectedValue += float64(CFR.Run(poker))
-		if i % (nIter / 100) == 0 {
+		if i % onePercentile == 0 {
 			fmt.Printf("%d iterations done.. Expected value: %.5f\n", i, expectedValue / float64(i))
 		}
 	}
@@ -92,8 +96,8 @@ func Run(nIter int) float64 {
 	return expectedValue
 }
 
-func GetDecision(Informations Def.RobotInherit, OpponentPreviousAction Def.PlayerAction, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
-	return holdem.GetDecision(Informations, OpponentPreviousAction, Standard, Total, RaiseDiff, AllInBound, myHistory)
+func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
+	return holdem.GetDecision(Informations, Standard, Total, RaiseDiff, AllInBound, myHistory)
 }
 
 func GetExpectation(history string, smallBlind float64) float64 {

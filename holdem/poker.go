@@ -341,8 +341,11 @@ func buildPostflop(parent *PokerNode, isShowdown bool) []PokerNode {
 
 	for _, strength := range HAND_STRENGTH {
 		// How bout from hand potential to hand strength?
-		if !isShowdown && strength > parent.handStrength[len(parent.handStrength)-1] {
-			continue
+		if !isShowdown  {
+			if (parent.handStrength[len(parent.handStrength)-1] > '9' &&
+				strength > parent.handStrength[len(parent.handStrength)-1]) {
+					continue
+				}
 		}
 		child := *parent
 		child.parent = parent

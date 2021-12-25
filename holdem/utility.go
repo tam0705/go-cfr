@@ -1459,28 +1459,28 @@ func RewardCounter(history string, raiseHistory []float64, raiseSize int64) (Tot
 			Standard = minInt(BetPos, Standard)
 		} else if (i%1 == 1){
 			var remainingPlayer int64;
-			if (history[i] >= "H" && history[i] <= "L") || history[i] == "!"){
+			if (history[i] >= 'H' && history[i] <= 'L') || history[i] == '!'{
 				remainingPlayer = 8
-			} else if (history[i] >= "M" && history[i] <= "Q") ||  history[i] == "@"){
+			} else if (history[i] >= 'M' && history[i] <= 'Q') ||  history[i] == '@'{
 				remainingPlayer = 7
-			} else if (history[i] >= "R" && history[i] <= "V") ||  history[i] == "#"){
+			} else if (history[i] >= 'R' && history[i] <= 'V') ||  history[i] == '#'{
 				remainingPlayer = 6
-			} else if (history[i] >= "W" && history[i] <= "Z") ||  history[i] == "b" || history[i] == "$"){
+			} else if (history[i] >= 'W' && history[i] <= 'Z') ||  history[i] == 'b' || history[i] == '$'{
 				remainingPlayer = 5
-			} else if (history[i] >= "d" && history[i] <= "i") || history[i] == "%"){
+			} else if (history[i] >= 'd' && history[i] <= 'i') || history[i] == '%'{
 				remainingPlayer = 4
-			} else if (history[i] >= "j" && history[i] <= "m") || history[i] == "^"){
+			} else if (history[i] >= 'j' && history[i] <= 'm') || history[i] == '^'{
 				remainingPlayer = 3
-			} else if (history[i] >= "n" && history[i] <= "q") || history[i] == "&"){
+			} else if (history[i] >= 'n' && history[i] <= 'q') || history[i] == '&'{
 				remainingPlayer = 2
 			} else {
 				remainingPlayer = 1
 			}
-			raiseNumber := OpponentRaiseDecoding(history[i])
-			remainingAct = make([]byte, remainingPlayer)
+			raiseNumber := OpponentRaiseDecoding(string([]byte{history[i]}))
+			remainingAct := make([]byte, remainingPlayer)
 			for j:=0; j<raiseNumber; j++{
 				randIndex := rand.Int() % int(remainingPlayer)
-				if remainingAct[randIndex] {
+				if remainingAct[randIndex] == 1 {
 					j -= 1
 				}else{
 					remainingAct[randIndex] = 1
@@ -1488,13 +1488,13 @@ func RewardCounter(history string, raiseHistory []float64, raiseSize int64) (Tot
 			}
 
 			for j:=0; j<int(remainingPlayer); j++{
-				if remainingAct[randIndex]{
+				if remainingAct[j] == 1{
 					enemyRaise := int64(float64(raiseDiff)*1.5)
 					raiseDiff = enemyRaise - Standard
 					Total += enemyRaise
 					Standard = enemyRaise
 				}else{
-					total += standard
+					Total += Standard
 				}
 			}
 		}
