@@ -28,16 +28,16 @@ const (
 // Third index: Strategies (Fold, Call, Raise, All-in)
 var OPPONENT_STRATEGY = [3][2][4]float32{
 	{
-		{ 0.4, 0.4, 0.1, 0.1 },
-		{ 0.3, 0.6, 0.09, 0.01 },
+		{0.4, 0.4, 0.1, 0.1},
+		{0.3, 0.6, 0.09, 0.01},
 	},
 	{
-		{ 0.05, 0.5, 0.4, 0.05 },
-		{ 0.15, 0.375, 0.375, 0.1 },
+		{0.05, 0.5, 0.4, 0.05},
+		{0.15, 0.375, 0.375, 0.1},
 	},
 	{
-		{ 0.01, 0.3, 0.6, 0.09 },
-		{ 0.1, 0.3, 0.3, 0.3 },
+		{0.01, 0.3, 0.6, 0.09},
+		{0.1, 0.3, 0.3, 0.3},
 	},
 }
 
@@ -61,7 +61,7 @@ func Init(opponent OpponentType, policyFileName string) {
 	CFR = cfr.NewMCCFR(policy, es)
 	opponentType = opponent
 
-	if (len(policyFileName) == 0) {
+	if len(policyFileName) == 0 {
 		fmt.Println("No policy data is provided. Setting opponent strategies manually for training..")
 		setStrategies()
 		fmt.Println("Strategies set!")
@@ -82,7 +82,7 @@ func Run(nIter int) float64 {
 
 	expectedValue := 0.0
 	onePercentile := nIter / 100
-	if (onePercentile == 0) {
+	if onePercentile == 0 {
 		onePercentile = 1
 	}
 	for i := 1; i <= nIter; i++ {
@@ -90,6 +90,7 @@ func Run(nIter int) float64 {
 
 		if i%(nIter/100) == 0 {
 			fmt.Printf("%d iterations done.. Expected value: %.5f\n", i, expectedValue/float64(i))
+		}
 	}
 
 	return expectedValue
@@ -233,7 +234,7 @@ func setStrategiesRecursive(history string) {
 	policy.SetStrategy(history, strat)
 
 	if len(history) > 10 {
-		return 
+		return
 	}
 
 	// Post-flop
@@ -242,8 +243,8 @@ func setStrategiesRecursive(history string) {
 			continue
 		}
 		for _, action := range slice {
-			for _,s := range[]byte{ 'c','r' } {
-				setStrategiesRecursive(history + string([]byte{ action, s }))
+			for _, s := range []byte{'c', 'r'} {
+				setStrategiesRecursive(history + string([]byte{action, s}))
 			}
 		}
 	}
