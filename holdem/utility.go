@@ -1460,7 +1460,7 @@ func RewardCounter(history string, raiseHistory []float64, raiseSize int64) (Tot
 		} else if (i%1 == 1){
 			var remainingPlayer int64;
 			if (history[i] >= "H" && history[i] <= "L") || history[i] == "!"){
-				remainingPlayer = 8
+				remainingPlayer = 8 
 			} else if (history[i] >= "M" && history[i] <= "Q") ||  history[i] == "@"){
 				remainingPlayer = 7
 			} else if (history[i] >= "R" && history[i] <= "V") ||  history[i] == "#"){

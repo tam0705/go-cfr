@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/tam0705/go-cfr"
-	"github.com/tam0705/go-cfr/def"
+	Def "github.com/tam0705/go-cfr/def"
 	"github.com/tam0705/go-cfr/holdem"
 	"github.com/tam0705/go-cfr/sampling"
 	"github.com/tam0705/go-cfr/tree"
@@ -28,19 +28,19 @@ const (
 // Third index: Strategies (Fold, Call, Raise, All-in)
 var ENEMY_STRATEGY = [3][3][4]float32{
 	{
-		{ 0.4, 0.4, 0.1, 0.1 },
-		{ 0.3, 0.6, 0.09, 0.01 },
-		{ 0.6, -1, -1, 0.4 },
+		{0.4, 0.4, 0.1, 0.1},
+		{0.3, 0.6, 0.09, 0.01},
+		{0.6, -1, -1, 0.4},
 	},
 	{
-		{ 0.05, 0.5, 0.4, 0.05 },
-		{ 0.15, 0.375, 0.375, 0.1 },
-		{ 0.4, -1, -1, 0.6 },
+		{0.05, 0.5, 0.4, 0.05},
+		{0.15, 0.375, 0.375, 0.1},
+		{0.4, -1, -1, 0.6},
 	},
 	{
-		{ 0.01, 0.3, 0.6, 0.09 },
-		{ 0.1, 0.3, 0.3, 0.3 },
-		{ 0.01, -1, -1, 0.99 },
+		{0.01, 0.3, 0.6, 0.09},
+		{0.1, 0.3, 0.3, 0.3},
+		{0.01, -1, -1, 0.99},
 	},
 }
 
@@ -57,13 +57,13 @@ var hasInit bool = false
 func Init(enemy EnemyType, policyFileName string) {
 	rand.Seed(time.Now().UnixNano())
 
-	policy = cfr.NewPolicyTable(cfr.DiscountParams{ LinearWeighting: true })
+	policy = cfr.NewPolicyTable(cfr.DiscountParams{LinearWeighting: true})
 	poker = holdem.NewGame(policy)
-	es = sampling.NewAverageStrategySampler(sampling.AverageStrategyParams{ 0.05, 1000.0, 1000000.0 })
+	es = sampling.NewAverageStrategySampler(sampling.AverageStrategyParams{0.05, 1000.0, 1000000.0})
 	CFR = cfr.NewMCCFR(policy, es)
 	enemyType = enemy
 
-	if (len(policyFileName) == 0) {
+	if len(policyFileName) == 0 {
 		setStrategies()
 	} else {
 		LoadPolicy(policyFileName, true)
@@ -73,15 +73,15 @@ func Init(enemy EnemyType, policyFileName string) {
 }
 
 func Run(nIter int) float64 {
-	if (!hasInit) {
+	if !hasInit {
 		Init(NEUTRAL, "")
 	}
 
 	expectedValue := 0.0
 	for i := 1; i <= nIter; i++ {
 		expectedValue += float64(CFR.Run(poker))
-		if i % (nIter / 100) == 0 {
-			fmt.Printf("%d iterations done.. Expected value: %.5f\n", i, expectedValue / float64(i))
+		if i%(nIter/100) == 0 {
+			fmt.Printf("%d iterations done.. Expected value: %.5f\n", i, expectedValue/float64(i))
 		}
 	}
 
@@ -90,11 +90,11 @@ func Run(nIter int) float64 {
 }
 
 func GetDecision(Informations Def.RobotInherit, OpponentPreviousAction Def.PlayerAction, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
-	return holdem.GetDecision(Informations, OpponentPreviousAction, Standard, Total, RaiseDiff, AllInBound, myHistory)
+	return holdem.GetDecision(Informations, Standard, Total, RaiseDiff, AllInBound, myHistory)
 }
 
 func GetExpectation(history string, smallBlind float64) float64 {
-	if len(history) % 3 == 0 {
+	if len(history)%3 == 0 {
 		history = history[:len(history)-1]
 	}
 	return getExpectationRecursive(poker.GetNode(history)) * smallBlind
@@ -104,11 +104,11 @@ func getExpectationRecursive(node cfr.GameTreeNode) float64 {
 	var ev float64
 
 	switch node.Type() {
-		case cfr.TerminalNodeType:
-			ev = node.Utility(1)
-		default:
-			child,_ := node.SampleChild()
-			ev = getExpectationRecursive(child)
+	case cfr.TerminalNodeType:
+		ev = node.Utility(1)
+	default:
+		child, _ := node.SampleChild()
+		ev = getExpectationRecursive(child)
 	}
 
 	return ev
@@ -125,12 +125,12 @@ func PrintTree(maxLines int) {
 				if k > maxLines {
 					return
 				}
-				for _,s := range strat {
+				for _, s := range strat {
 					if s != float32(1/len(strat)) && s != 0.0 && s != 1.0 {
 						fmt.Printf("[player %d] %13s: %.5f\n", player, infoSet, strat)
 						k++
 						break
-					} 
+					}
 				}
 			}
 		}
@@ -145,12 +145,12 @@ func PrintPolicy(maxLines int) {
 		if k > maxLines {
 			return
 		}
-		for _,s := range strat {
+		for _, s := range strat {
 			if s != float32(1/len(strat)) && s != 0.0 && s != 1.0 {
 				fmt.Printf("%13s: %.5f\n", key, strat)
 				k++
 				break
-			} 
+			}
 		}
 	})
 	fmt.Printf("There are a total of %d keys visited.\n", i)
@@ -205,7 +205,7 @@ func LoadPolicy(fileName string, replace bool) {
 
 		policy.PoliciesByKey = oldPolicyTable
 	}
-	
+
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -216,7 +216,7 @@ func LoadPolicy(fileName string, replace bool) {
 
 func setStrategies() {
 	// Pre-flop
-	for _,potential := range holdem.HAND_POTENTIAL {
+	for _, potential := range holdem.HAND_POTENTIAL {
 		history := string([]byte{potential})
 		setStrategiesRecursive(history)
 		policy.SetStrategy(history, ENEMY_STRATEGY[enemyType][0][:])
@@ -227,12 +227,12 @@ func setStrategiesRecursive(history string) {
 	policy.SetStrategy(history, ENEMY_STRATEGY[enemyType][1][:])
 
 	if len(history) >= 10 {
-		return 
+		return
 	}
 
 	// Post-flop
-	for _,s := range []string{ "cc", "cr", "rc", "rr" } {
-		for _,strength := range holdem.HAND_STRENGTH {
+	for _, s := range []string{"cc", "cr", "rc", "rr"} {
+		for _, strength := range holdem.HAND_STRENGTH {
 			setStrategiesRecursive(history + s + string([]byte{strength}))
 		}
 	}
