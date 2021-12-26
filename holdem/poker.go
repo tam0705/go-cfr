@@ -10,8 +10,8 @@ import (
 
 const (
 	NODE_CHANCE  = -1
-	NODE_PLAYER0 = 0
-	NODE_PLAYER1 = 1
+	NODE_AI = 0
+	NODE_OPPONENT = 1
 )
 
 const (
@@ -44,13 +44,23 @@ var HAND_STRENGTH = [7]byte{
 	'G', // highCard
 }
 
+// Encoding for remaining num of opponents + num of raises (H to u, some skipped)
+var ENC_OPPONENT = [8][]byte{
+	{ 'H', 'I', 'J', 'K', 'L', '!' }, // 8 opponents
+	{ 'M', 'N', 'O', 'P', 'Q', '@' }, // 7 opponents
+	{ 'R', 'S', 'T', 'U', 'V', '#' }, // 6 opponents
+	{ 'W', 'X', 'Y', 'Z', 'b', '$' }, // 5 opponents
+	{ 'd', 'e', 'g', 'h', 'i', '%' }, // 4 opponents
+	{ 'j', 'k', 'l', 'm', '^' },      // 3 opponents
+	{ 'n', 'o', 'p', 'q', '&' },      // 2 opponents
+	{ 's', 't', 'u', '*' },           // 1 opponent
+}
 
 var PROB_PREFLOP = [10]float64{ 0.006, 0.012, 0.024, 0.054, 0.127, 0.109, 0.024, 0.048, 0.308, 0.288 }
 
 var PROB_POSTFLOP = [4][7]float64{
 	{ 0.0008, 0.0017, 0.0059, 0.0211, 0.0475, 0.4226, 0.5012 },
 	{ 0.000091, 0.00887, 0.0279, 0.036, 0.1244, 0.478, 0.325 },
-	{ 0.0003, 0.0277, 0.0765, 0.0483, 0.2350, 0.4380, 0.1740 },
 	{ 0.0003, 0.0277, 0.0765, 0.0483, 0.2350, 0.4380, 0.1740 },
 }
 
@@ -63,7 +73,9 @@ type PokerNode struct {
 	children      []PokerNode
 	probabilities []float64
 	history       string
-	handStrength string
+
+	handStrength  string
+	opponentNum   int
 }
 
 var pokerGame *PokerNode
@@ -144,9 +156,15 @@ func (k *PokerNode) Type() cfr.NodeType {
 // cfr.GameTreeNode implementation
 func (k *PokerNode) GetNode(history string) cfr.GameTreeNode {
 	// Recursive method
-	if (len(k.history) > len(history)) { return nil }
-	if (k.history != history[:len(k.history)]) { return nil }
-	if k.history == history { return k }
+	if len(k.history) > len(history) {
+		return nil
+	}
+	if k.history != history[:len(k.history)] {
+		return nil
+	}
+	if k.history == history {
+		return k
+	}
 
 	if k.children == nil {
 		k.buildChildren()
@@ -160,10 +178,10 @@ func (k *PokerNode) GetNode(history string) cfr.GameTreeNode {
 	return nil
 }
 
-func GetStrategy(history string) ([]float64, byte) {
+func GetStrategy(history string) []float64 {
 	policyData, ok := policy.GetPolicyByKey(history)
 
-	if (!ok) {
+	if !ok {
 		policyData.SetStrategy(make([]float32, pokerGame.GetNode(history).NumChildren()))
 	}
 
@@ -172,26 +190,16 @@ func GetStrategy(history string) ([]float64, byte) {
 	for i,s := range strat {
 		strat64[i] = float64(s)
 	}
-	return strat64, byte(len(strat))
+	return strat64
 }
 
 func (k *PokerNode) IsTerminal() bool {
 	// Only valid for two players
-	if len(k.history) < 1 {
+	if len(k.history) <= 1 {
 		return false
 	}
-	if len(k.history) >= 1 {
-		if k.history[len(k.history) - 1] == 'f' {
-			return true
-		}
-	}
-	if len(k.history) >= 2 {
-		if (k.history[len(k.history) - 2:] == "aa" || k.history[len(k.history) - 2:] == "ca" ||
-		k.history[len(k.history) - 2:] == "ra") {
-			return true
-		}
-	}
-	return (len(k.history) == 12)
+	return (k.history[len(k.history) - 1] == 'f' || 
+		k.history[len(k.history) - 1] == 'a' || k.opponentNum == 0)
 }
 
 // Player implements cfr.GameTreeNode.
@@ -209,40 +217,40 @@ func (k *PokerNode) Utility(player int) float64 {
 			raiseArr = append(raiseArr, float64((policyData.GetStrategy())[1]))
 		}
 	}
-
 	total, betPos := RewardCounter(k.history, raiseArr, int64(len(raiseArr)))
-	printit(total, "Total negative!")
-	printit(betPos, "BetPos negative!")
 
-	if len(k.history) == 13 {
+	if k.opponentNum == 0 {
+		// If all opponents folded
+		if len(k.history) < 13 {
+			return float64(total - betPos)
+		}
+
 		// If showdown is reached
-		diff := int(k.history[len(k.history) - 1] - k.history[len(k.history) - 3])
-		if (diff > 0) {
-			return float64(total - betPos)
-		} else if (diff < 0) {
-			return float64(-betPos)
-		}
-	} else if k.history[len(k.history) - 1] == 'f' {
-		// If a player folds
-		if (k.player == player) {
-			return float64(total - betPos)
-		} else {
-			return float64(-betPos)
-		}
-	} else if (k.history[len(k.history) - 2:] == "aa" ||
-		k.history[len(k.history) - 2:] == "ca" ||
-		k.history[len(k.history) - 2:] == "ra") {
-		// If both players do all-in
-		lastStrength := k.handStrength[len(k.handStrength) - 1]
-		if (len(k.handStrength) >= 2) {
-			if (k.history[len(k.history) - 2:] != "aa") {
-				lastStrength = k.handStrength[len(k.handStrength) - 2]
+		myStrength := k.handStrength[3]
+		diff := 0
+		for _,s := range k.handStrength[4:] {
+			if myStrength < byte(s) {
+				diff = 1
+			} else if myStrength > byte(s) {
+				diff = -1
+				break
 			}
 		}
-		win := AllInWinner(string([]byte{lastStrength}))
-		if (win == byte(2)) {
+		if diff > 0 {
 			return float64(total - betPos)
-		} else if (win == byte(0)) {
+		} else if diff < 0 {
+			return float64(-betPos)
+		}
+	} else if k.history[len(k.history)-1] == 'f' {
+		// If AI folded
+		return float64(-betPos)
+	} else if k.history[len(k.history)-1] == 'a' {
+		// If AI did all-in
+		lastStrength := k.handStrength[len(k.handStrength) - 1]
+		win := AllInWinner(string([]byte{lastStrength}), k.opponentNum)
+		if win == byte(2) {
+			return float64(total - betPos)
+		} else if win == byte(0) {
 			return float64(-betPos)
 		}
 	}
@@ -293,22 +301,20 @@ func (k *PokerNode) buildChildren() {
 		k.children = buildPreflop(k)
 		k.probabilities = PROB_PREFLOP[:]
 	case 1, 4, 7, 10:
-		if k.history[len(k.history)-1] == ACTION_ALL_IN {
-			k.children = buildPlayerAllin(k, 1)	
-		} else if k.history[len(k.history)-1] != ACTION_FOLD {
-			k.children = buildPlayerDeals(k, 1)
-		}
+		k.children = buildOpponentDeals(k)
 	case 2, 5, 8, 11:
-		if k.history[len(k.history)-1] == ACTION_ALL_IN {
-			k.children = buildPlayerAllin(k, 0)	
-		} else if k.history[len(k.history)-1] != ACTION_FOLD {
-			k.children = buildPlayerDeals(k, 0)
-		}
-	case 3, 6, 9, 12:
+		k.children = buildAIDeals(k)
+	case 3, 6, 9:
 		if (k.history[len(k.history)-1] != ACTION_FOLD &&
 		k.history[len(k.history)-1] != ACTION_ALL_IN) {
-			k.children = buildPostflop(k)
+			k.children = buildPostflop(k, false)
 			k.probabilities = PROB_POSTFLOP[int(len(k.history)/3-1)][:]
+		}
+	default:
+		if (k.history[len(k.history)-1] != ACTION_FOLD &&
+		k.history[len(k.history)-1] != ACTION_ALL_IN && k.opponentNum > 0) {
+			k.children = buildPostflop(k, true)
+			k.probabilities = PROB_POSTFLOP[2][:]
 		}
 	}
 }
@@ -319,9 +325,10 @@ func buildPreflop(parent *PokerNode) []PokerNode {
 	for _, potential := range HAND_POTENTIAL {
 		child := PokerNode{
 			parent: parent,
-			player: NODE_PLAYER1,
+			player: NODE_OPPONENT,
 			history: string([]byte{potential}),
 			handStrength: string([]byte{potential}),
+			opponentNum: 8,
 		}
 		result = append(result, child)
 	}
@@ -329,29 +336,61 @@ func buildPreflop(parent *PokerNode) []PokerNode {
 	return result
 }
 
-func buildPostflop(parent *PokerNode) []PokerNode {
+func buildPostflop(parent *PokerNode, isShowdown bool) []PokerNode {
 	var result []PokerNode
 
 	for _, strength := range HAND_STRENGTH {
+		// How bout from hand potential to hand strength?
+		if !isShowdown  {
+			if (parent.handStrength[len(parent.handStrength)-1] > '9' &&
+				strength > parent.handStrength[len(parent.handStrength)-1]) {
+					continue
+				}
+		}
 		child := *parent
 		child.parent = parent
-		child.player = NODE_PLAYER1
+		child.player = NODE_OPPONENT
 		child.history += string([]byte{strength})
 		child.handStrength += string([]byte{strength})
+		if isShowdown {
+			child.player = NODE_CHANCE
+			child.opponentNum--
+		}
 		result = append(result, child)
 	}
 
 	return result
 }
 
-func buildPlayerDeals(parent *PokerNode, player int) []PokerNode {
-	// Player player deals, build next player's node
+func buildOpponentDeals(parent *PokerNode) []PokerNode {
+	// Build nodes of opponents dealing
+	var result []PokerNode
+
+	for i, slice := range ENC_OPPONENT {
+		if 8-i > parent.opponentNum {
+			continue
+		}
+		for _, action := range slice {
+			child := *parent
+			child.parent = parent
+			child.player = NODE_AI
+			child.history += string([]byte{action})
+			child.opponentNum = 8-i
+			result = append(result, child)
+		}
+	}
+
+	return result
+}
+
+func buildAIDeals(parent *PokerNode) []PokerNode {
+	// Build nodes of AI dealing
 	var result []PokerNode
 
 	for _, action := range []byte{ ACTION_FOLD, ACTION_CALL, ACTION_RAISE, ACTION_ALL_IN } {
 		child := *parent
 		child.parent = parent
-		child.player = player - 1
+		child.player = NODE_CHANCE
 		child.history += string([]byte{action})
 		result = append(result, child)
 	}
@@ -359,20 +398,15 @@ func buildPlayerDeals(parent *PokerNode, player int) []PokerNode {
 	return result
 }
 
-func buildPlayerAllin(parent *PokerNode, player int) []PokerNode {
-	// Player player all in, build next player's node
-	// Only applies for the first all in player
-	var result []PokerNode
-
-	for _, action := range []byte{ ACTION_FOLD, ACTION_ALL_IN } {
-		child := *parent
-		child.parent = parent
-		child.player = player - 1
-		child.history += string([]byte{action})
-		result = append(result, child)
+func GetOpponentInfo(char byte) (int, int) {
+	for i, slice := range ENC_OPPONENT {
+		for j, e := range slice {
+			if char == e {
+				return 8-i, j+1
+			}
+		}
 	}
-
-	return result
+	return -1, -1
 }
 
 func init() {

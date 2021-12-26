@@ -14,33 +14,30 @@ import (
 	"github.com/tam0705/go-cfr/tree"
 )
 
-type EnemyType int
+type OpponentType int
 
 const (
-	PESSIMISTIC EnemyType = iota
+	PESSIMISTIC OpponentType = iota
 	NEUTRAL
 	CONFIDENT
 )
 
-// Pre-determined enemy strategies
-// First index: Enemy type (Pessimistic, Neutral, Confident)
+// Pre-determined opponent strategies
+// First index: Opponent type (Pessimistic, Neutral, Confident)
 // Second index: Condition (Pre-flop, post-flop, after all-in)
 // Third index: Strategies (Fold, Call, Raise, All-in)
-var ENEMY_STRATEGY = [3][3][4]float32{
+var OPPONENT_STRATEGY = [3][2][4]float32{
 	{
-		{0.4, 0.4, 0.1, 0.1},
-		{0.3, 0.6, 0.09, 0.01},
-		{0.6, -1, -1, 0.4},
+		{ 0.4, 0.4, 0.1, 0.1 },
+		{ 0.3, 0.6, 0.09, 0.01 },
 	},
 	{
-		{0.05, 0.5, 0.4, 0.05},
-		{0.15, 0.375, 0.375, 0.1},
-		{0.4, -1, -1, 0.6},
+		{ 0.05, 0.5, 0.4, 0.05 },
+		{ 0.15, 0.375, 0.375, 0.1 },
 	},
 	{
-		{0.01, 0.3, 0.6, 0.09},
-		{0.1, 0.3, 0.3, 0.3},
-		{0.01, -1, -1, 0.99},
+		{ 0.01, 0.3, 0.6, 0.09 },
+		{ 0.1, 0.3, 0.3, 0.3 },
 	},
 }
 
@@ -49,27 +46,33 @@ var policy *cfr.PolicyTable
 var es *sampling.AverageStrategySampler
 var CFR *cfr.MCCFR
 
-var enemyType EnemyType = NEUTRAL
+var opponentType OpponentType = NEUTRAL
 
 var hasInit bool = false
 
 // Implementation of AI Interface
-func Init(enemy EnemyType, policyFileName string) {
+func Init(opponent OpponentType, policyFileName string) {
+	fmt.Println("Initializing CFR AI..")
 	rand.Seed(time.Now().UnixNano())
 
 	policy = cfr.NewPolicyTable(cfr.DiscountParams{LinearWeighting: true})
 	poker = holdem.NewGame(policy)
 	es = sampling.NewAverageStrategySampler(sampling.AverageStrategyParams{0.05, 1000.0, 1000000.0})
 	CFR = cfr.NewMCCFR(policy, es)
-	enemyType = enemy
+	opponentType = opponent
 
-	if len(policyFileName) == 0 {
+	if (len(policyFileName) == 0) {
+		fmt.Println("No policy data is provided. Setting opponent strategies manually for training..")
 		setStrategies()
+		fmt.Println("Strategies set!")
 	} else {
+		fmt.Println("Policy data is provided. Loading data..")
 		LoadPolicy(policyFileName, true)
+		fmt.Println("Data loaded")
 	}
 
 	hasInit = true
+	fmt.Println("Initialization done!")
 }
 
 func Run(nIter int) float64 {
@@ -78,18 +81,21 @@ func Run(nIter int) float64 {
 	}
 
 	expectedValue := 0.0
+	onePercentile := nIter / 100
+	if (onePercentile == 0) {
+		onePercentile = 1
+	}
 	for i := 1; i <= nIter; i++ {
 		expectedValue += float64(CFR.Run(poker))
+
 		if i%(nIter/100) == 0 {
 			fmt.Printf("%d iterations done.. Expected value: %.5f\n", i, expectedValue/float64(i))
-		}
 	}
 
-	expectedValue /= float64(nIter)
 	return expectedValue
 }
 
-func GetDecision(Informations Def.RobotInherit, OpponentPreviousAction Def.PlayerAction, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
+func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
 	return holdem.GetDecision(Informations, Standard, Total, RaiseDiff, AllInBound, myHistory)
 }
 
@@ -219,21 +225,26 @@ func setStrategies() {
 	for _, potential := range holdem.HAND_POTENTIAL {
 		history := string([]byte{potential})
 		setStrategiesRecursive(history)
-		policy.SetStrategy(history, ENEMY_STRATEGY[enemyType][0][:])
 	}
 }
 
 func setStrategiesRecursive(history string) {
-	policy.SetStrategy(history, ENEMY_STRATEGY[enemyType][1][:])
+	prevOppNum, strat := getOppStrat(history, opponentType)
+	policy.SetStrategy(history, strat)
 
-	if len(history) >= 10 {
-		return
+	if len(history) > 10 {
+		return 
 	}
 
 	// Post-flop
-	for _, s := range []string{"cc", "cr", "rc", "rr"} {
-		for _, strength := range holdem.HAND_STRENGTH {
-			setStrategiesRecursive(history + s + string([]byte{strength}))
+	for i, slice := range holdem.ENC_OPPONENT {
+		if 8-i > prevOppNum {
+			continue
+		}
+		for _, action := range slice {
+			for _,s := range[]byte{ 'c','r' } {
+				setStrategiesRecursive(history + string([]byte{ action, s }))
+			}
 		}
 	}
 }
