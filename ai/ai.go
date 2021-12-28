@@ -28,16 +28,16 @@ const (
 // Third index: Strategies (Fold, Call, Raise, All-in)
 var OPPONENT_STRATEGY = [3][2][4]float32{
 	{
-		{ 0.4, 0.4, 0.1, 0.1 },
-		{ 0.3, 0.6, 0.09, 0.01 },
+		{0.4, 0.4, 0.1, 0.1},
+		{0.3, 0.6, 0.09, 0.01},
 	},
 	{
-		{ 0.05, 0.5, 0.4, 0.05 },
-		{ 0.15, 0.375, 0.375, 0.1 },
+		{0.05, 0.5, 0.4, 0.05},
+		{0.15, 0.375, 0.375, 0.1},
 	},
 	{
-		{ 0.01, 0.3, 0.6, 0.09 },
-		{ 0.1, 0.3, 0.3, 0.3 },
+		{0.01, 0.3, 0.6, 0.09},
+		{0.1, 0.3, 0.3, 0.3},
 	},
 }
 
@@ -55,13 +55,13 @@ func Init(opponent OpponentType, policyFileName string) {
 	fmt.Println("Initializing CFR AI..")
 	rand.Seed(time.Now().UnixNano())
 
-	policy = cfr.NewPolicyTable(cfr.DiscountParams{ LinearWeighting: true })
+	policy = cfr.NewPolicyTable(cfr.DiscountParams{LinearWeighting: true})
 	poker = holdem.NewGame(policy)
-	es = sampling.NewAverageStrategySampler(sampling.AverageStrategyParams{ 0.05, 1000.0, 1000000.0 })
+	es = sampling.NewAverageStrategySampler(sampling.AverageStrategyParams{0.05, 1000.0, 1000000.0})
 	CFR = cfr.NewMCCFR(policy, es)
 	opponentType = opponent
 
-	if (len(policyFileName) == 0) {
+	if len(policyFileName) == 0 {
 		fmt.Println("No policy data is provided. Setting opponent strategies manually for training..")
 		setStrategies()
 		fmt.Println("Strategies set!")
@@ -76,23 +76,23 @@ func Init(opponent OpponentType, policyFileName string) {
 }
 
 func Run(nIter int) float64 {
-	if (!hasInit) {
+	if !hasInit {
 		Init(NEUTRAL, "")
 	}
 
 	expectedValue := 0.0
 	onePercentile := nIter / 100
-	if (onePercentile == 0) {
+	if onePercentile == 0 {
 		onePercentile = 1
 	}
 	for i := 1; i <= nIter; i++ {
 		expectedValue += float64(CFR.Run(poker))
-		if i % onePercentile == 0 {
-			fmt.Printf("%d iterations done.. Expected value: %.5f\n", i, expectedValue / float64(i))
+
+		if i%(nIter/100) == 0 {
+			fmt.Printf("%d iterations done.. Expected value: %.5f\n", i, expectedValue/float64(i))
 		}
 	}
 
-	expectedValue /= float64(nIter)
 	return expectedValue
 }
 
@@ -101,7 +101,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 }
 
 func GetExpectation(history string, smallBlind float64) float64 {
-	if len(history) % 3 == 0 {
+	if len(history)%3 == 0 {
 		history = history[:len(history)-1]
 	}
 	return getExpectationRecursive(poker.GetNode(history)) * smallBlind
@@ -111,11 +111,11 @@ func getExpectationRecursive(node cfr.GameTreeNode) float64 {
 	var ev float64
 
 	switch node.Type() {
-		case cfr.TerminalNodeType:
-			ev = node.Utility(1)
-		default:
-			child,_ := node.SampleChild()
-			ev = getExpectationRecursive(child)
+	case cfr.TerminalNodeType:
+		ev = node.Utility(1)
+	default:
+		child, _ := node.SampleChild()
+		ev = getExpectationRecursive(child)
 	}
 
 	return ev
@@ -132,12 +132,12 @@ func PrintTree(maxLines int) {
 				if k > maxLines {
 					return
 				}
-				for _,s := range strat {
+				for _, s := range strat {
 					if s != float32(1/len(strat)) && s != 0.0 && s != 1.0 {
 						fmt.Printf("[player %d] %13s: %.5f\n", player, infoSet, strat)
 						k++
 						break
-					} 
+					}
 				}
 			}
 		}
@@ -152,12 +152,12 @@ func PrintPolicy(maxLines int) {
 		if k > maxLines {
 			return
 		}
-		for _,s := range strat {
+		for _, s := range strat {
 			if s != float32(1/len(strat)) && s != 0.0 && s != 1.0 {
 				fmt.Printf("%13s: %.5f\n", key, strat)
 				k++
 				break
-			} 
+			}
 		}
 	})
 	fmt.Printf("There are a total of %d keys visited.\n", i)
@@ -212,7 +212,7 @@ func LoadPolicy(fileName string, replace bool) {
 
 		policy.PoliciesByKey = oldPolicyTable
 	}
-	
+
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -223,7 +223,7 @@ func LoadPolicy(fileName string, replace bool) {
 
 func setStrategies() {
 	// Pre-flop
-	for _,potential := range holdem.HAND_POTENTIAL {
+	for _, potential := range holdem.HAND_POTENTIAL {
 		history := string([]byte{potential})
 		setStrategiesRecursive(history)
 	}
@@ -234,7 +234,7 @@ func setStrategiesRecursive(history string) {
 	policy.SetStrategy(history, strat)
 	
 	if len(history) >= 10 {
-		return 
+		return
 	}
 
 	lastStrength := getLastStrength(history)

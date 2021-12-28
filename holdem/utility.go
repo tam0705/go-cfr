@@ -196,18 +196,18 @@ func OpponentRaiseEncoding(rp, raiseNum int) (res string) {
 			res = "s"
 		}
 	}
-	return 
+	return
 }
 
 func OpponentRaiseDecoding(ltr string) (intAmount int) {
-	switch  ltr{
+	switch ltr {
 	case "H", "M", "R", "W", "d":
 		intAmount = 5
 	case "I", "N", "S", "X", "e", "j", "n":
 		intAmount = 4
 	case "J", "O", "T", "Y", "g", "k", "o", "r":
 		intAmount = 3
-	case "K", "P", "Z", "h", "l", "p", "s": 
+	case "K", "P", "Z", "h", "l", "p", "s":
 		intAmount = 2
 	case "t", "q", "m", "i", "b", "V", "Q", "L":
 		intAmount = 1
@@ -222,7 +222,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	var currentRound byte = GetCurrentRound(Informations.Card)
 	if len(myHistory) == 3*int(currentRound) {
 		//check whether round repeats, if it does, clean history
-		myHistory = myHistory[0:len(myHistory)-2] + OpponentRaiseEncoding(int(Informations.PlayerNum) - 1, int(Informations.RaiseCounter - Informations.RaiseSelf))
+		myHistory = myHistory[0:len(myHistory)-2] + OpponentRaiseEncoding(int(Informations.PlayerNum)-1, int(Informations.RaiseCounter-Informations.RaiseSelf))
 	} else {
 		//every new round, analyze handstrength
 		if len(myHistory) == 0 {
@@ -231,7 +231,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 			myHistory += HistoryAdd(Informations.Card)
 		}
 
-		myHistory += OpponentRaiseEncoding(int(Informations.PlayerNum) - 1, int(Informations.RaiseCounter - Informations.RaiseSelf))
+		myHistory += OpponentRaiseEncoding(int(Informations.PlayerNum)-1, int(Informations.RaiseCounter-Informations.RaiseSelf))
 	}
 
 	//historyReady
@@ -1457,43 +1457,43 @@ func RewardCounter(history string, raiseHistory []float64, raiseSize int64) (Tot
 			Total += AllinBound
 			BetPos += AllinBound
 			Standard = minInt(BetPos, Standard)
-		} else if (i%1 == 1){
-			var remainingPlayer int64;
-			if (history[i] >= 'H' && history[i] <= 'L') || history[i] == '!'{
+		} else if i%1 == 1 {
+			var remainingPlayer int64
+			if (history[i] >= 'H' && history[i] <= 'L') || history[i] == '!' {
 				remainingPlayer = 8
-			} else if (history[i] >= 'M' && history[i] <= 'Q') ||  history[i] == '@'{
+			} else if (history[i] >= 'M' && history[i] <= 'Q') || history[i] == '@' {
 				remainingPlayer = 7
-			} else if (history[i] >= 'R' && history[i] <= 'V') ||  history[i] == '#'{
+			} else if (history[i] >= 'R' && history[i] <= 'V') || history[i] == '#' {
 				remainingPlayer = 6
-			} else if (history[i] >= 'W' && history[i] <= 'Z') ||  history[i] == 'b' || history[i] == '$'{
+			} else if (history[i] >= 'W' && history[i] <= 'Z') || history[i] == 'b' || history[i] == '$' {
 				remainingPlayer = 5
-			} else if (history[i] >= 'd' && history[i] <= 'i') || history[i] == '%'{
+			} else if (history[i] >= 'd' && history[i] <= 'i') || history[i] == '%' {
 				remainingPlayer = 4
-			} else if (history[i] >= 'j' && history[i] <= 'm') || history[i] == '^'{
+			} else if (history[i] >= 'j' && history[i] <= 'm') || history[i] == '^' {
 				remainingPlayer = 3
-			} else if (history[i] >= 'n' && history[i] <= 'q') || history[i] == '&'{
+			} else if (history[i] >= 'n' && history[i] <= 'q') || history[i] == '&' {
 				remainingPlayer = 2
 			} else {
 				remainingPlayer = 1
 			}
 			raiseNumber := OpponentRaiseDecoding(string([]byte{history[i]}))
 			remainingAct := make([]byte, remainingPlayer)
-			for j:=0; j<raiseNumber; j++{
+			for j := 0; j < raiseNumber; j++ {
 				randIndex := rand.Int() % int(remainingPlayer)
 				if remainingAct[randIndex] == 1 {
 					j -= 1
-				}else{
+				} else {
 					remainingAct[randIndex] = 1
 				}
 			}
 
-			for j:=0; j<int(remainingPlayer); j++{
-				if remainingAct[j] == 1{
-					enemyRaise := int64(float64(raiseDiff)*1.5)
+			for j := 0; j < int(remainingPlayer); j++ {
+				if remainingAct[j] == 1 {
+					enemyRaise := int64(float64(raiseDiff) * 1.5)
 					raiseDiff = enemyRaise - Standard
 					Total += enemyRaise
 					Standard = enemyRaise
-				}else{
+				} else {
 					Total += Standard
 				}
 			}
