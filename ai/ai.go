@@ -230,21 +230,28 @@ func setStrategies() {
 }
 
 func setStrategiesRecursive(history string) {
-	prevOppNum, strat := getOppStrat(history, opponentType)
+	prevOppNum, strat := getOppStrat(history)
 	policy.SetStrategy(history, strat)
-
-	if len(history) > 10 {
+	
+	if len(history) >= 10 {
 		return 
 	}
+
+	lastStrength := getLastStrength(history)
 
 	// Post-flop
 	for i, slice := range holdem.ENC_OPPONENT {
 		if 8-i > prevOppNum {
 			continue
 		}
-		for _, action := range slice {
-			for _,s := range[]byte{ 'c','r' } {
-				setStrategiesRecursive(history + string([]byte{ action, s }))
+		for _, enc := range slice {
+			for _, act := range[]byte{ 'c','r' } {
+				for _, s := range holdem.HAND_STRENGTH {
+					if lastStrength > '9' && s > lastStrength {
+						continue
+					}
+					setStrategiesRecursive(history + string([]byte{ enc, act, s }))
+				}
 			}
 		}
 	}
