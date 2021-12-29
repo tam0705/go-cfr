@@ -101,10 +101,8 @@ func OpponentRaiseEncoding(rp, raiseNum int) (res string) {
 		default:
 			res = "H"
 		}
-	} else if rp > 1 {
+	} else {
 		switch raiseNum {
-		case 3:
-			res = "k"
 		case 2:
 			res = "l"
 		case 1:
@@ -112,18 +110,7 @@ func OpponentRaiseEncoding(rp, raiseNum int) (res string) {
 		case 0:
 			res = "^"
 		default:
-			res = "j"
-		}
-	} else {
-		switch raiseNum {
-		case 2:
-			res = "t"
-		case 1:
-			res = "u"
-		case 0:
-			res = "*"
-		default:
-			res = "s"
+			res = "k"
 		}
 	}
 	return
@@ -1391,10 +1378,8 @@ func RewardCounter(history string, raiseHistory []float64, raiseSize int64) (Tot
 			var remainingPlayer int64
 			if (history[i] >= 'H' && history[i] <= 'L') || history[i] == '!' {
 				remainingPlayer = int64(rand.Int()%5) + 4
-			} else if (history[i] >= 'j' && history[i] <= 'm') || history[i] == '^' {
-				remainingPlayer = int64(rand.Int()%2) + 2
 			} else {
-				remainingPlayer = 1
+				remainingPlayer = int64(rand.Int()%3) + 1
 			}
 			raiseNumber := OpponentRaiseDecoding(string([]byte{history[i]}))
 			remainingAct := make([]byte, remainingPlayer)
