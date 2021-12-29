@@ -1386,7 +1386,7 @@ func RewardCounter(history string, raiseHistory []float64, raiseSize int64) (Tot
 
 			for j := int64(0); j < raiseNumber; j++ {
 				randIndex := rand.Int() % int(remainingPlayer)
-				if remainingAct[randIndex] == 2 {
+				if remainingAct[randIndex] == 3 {
 					j -= 1
 				} else {
 					remainingAct[randIndex] += 1
