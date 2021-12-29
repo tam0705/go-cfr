@@ -6,14 +6,8 @@ Remaining Player when All In randomized between the range.
  - 2 raise : 'K'
  - 1 raise: 'L'
  - 0 raise: '!'
-3-2 player
- - 4 raise/above : 'j'
- - 3 raise : 'k'
+3-1 player
+ - 3 raise/above : 'k'
  - 2 raise : 'l'
  - 1 raise : 'm'
  - 0 raise: '^'
-1 player
- - 3 raise/above: 's'
- - 2 raise : 't'
- - 1 raise : 'u'
- - 0 raise: '*'
