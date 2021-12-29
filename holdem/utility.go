@@ -35,6 +35,8 @@ const (
 	ALLIN_TRAIN      int64 = 200
 )
 
+const RAISE_SMALLEST_AMOUNT = 500
+
 func minInt(a, b int64) int64 {
 	if a < b {
 		return a
@@ -54,8 +56,10 @@ func maxInt(a, b int64) int64 {
 func GetRaiseAmount(ConfidenceAmount, Standard, RaiseDiff, AllInBound float64, Informations Def.RobotInherit) float64 {
 	var ratioToAllIn float64 = math.Min(AllInBound-Informations.BetPos, Informations.ContestMoney) / Standard
 	var ratioToRaise float64 = (RaiseDiff + Standard - Informations.BetPos) / Standard
-	ratioToAllIn /= Informations.SbBet
-	ratioToRaise /= Informations.SbBet
+	//ratioToAllIn /= Informations.SbBet
+	//ratioToRaise /= Informations.SbBet
+	ratioToAllIn /= RAISE_SMALLEST_AMOUNT
+	ratioToRaise /= RAISE_SMALLEST_AMOUNT
 
 	//based on the confidence amount, generate the
 	//the ratio to raise, with [ratioToRaise, ratioToAllIn)
@@ -76,14 +80,13 @@ func GetRaiseAmount(ConfidenceAmount, Standard, RaiseDiff, AllInBound float64, I
 	if raiseRatio == (ratioToAllIn)*Standard {
 		raiseRatio -= 1
 	}
-	raiseRatio *= Informations.SbBet
+	raiseRatio *= RAISE_SMALLEST_AMOUNT
 	return raiseRatio
 }
 
 func OpponentRaiseEncoding(rp, raiseNum int) (res string) {
 	res = ""
-	switch rp {
-	case 8:
+	if rp > 3 {
 		switch raiseNum {
 		case 4:
 			res = "I"
@@ -98,67 +101,7 @@ func OpponentRaiseEncoding(rp, raiseNum int) (res string) {
 		default:
 			res = "H"
 		}
-	case 7:
-		switch raiseNum {
-		case 4:
-			res = "N"
-		case 3:
-			res = "O"
-		case 2:
-			res = "P"
-		case 1:
-			res = "Q"
-		case 0:
-			res = "@"
-		default:
-			res = "M"
-		}
-	case 6:
-		switch raiseNum {
-		case 4:
-			res = "S"
-		case 3:
-			res = "T"
-		case 2:
-			res = "U"
-		case 1:
-			res = "V"
-		case 0:
-			res = "#"
-		default:
-			res = "R"
-		}
-	case 5:
-		switch raiseNum {
-		case 4:
-			res = "X"
-		case 3:
-			res = "Y"
-		case 2:
-			res = "Z"
-		case 1:
-			res = "b"
-		case 0:
-			res = "$"
-		default:
-			res = "W"
-		}
-	case 4:
-		switch raiseNum {
-		case 4:
-			res = "e"
-		case 3:
-			res = "g"
-		case 2:
-			res = "h"
-		case 1:
-			res = "i"
-		case 0:
-			res = "%"
-		default:
-			res = "d"
-		}
-	case 3:
+	} else if rp > 1 {
 		switch raiseNum {
 		case 3:
 			res = "k"
@@ -171,20 +114,7 @@ func OpponentRaiseEncoding(rp, raiseNum int) (res string) {
 		default:
 			res = "j"
 		}
-	case 2:
-		switch raiseNum {
-		case 3:
-			res = "o"
-		case 2:
-			res = "p"
-		case 1:
-			res = "q"
-		case 0:
-			res = "&"
-		default:
-			res = "n"
-		}
-	default:
+	} else {
 		switch raiseNum {
 		case 2:
 			res = "t"
@@ -199,7 +129,7 @@ func OpponentRaiseEncoding(rp, raiseNum int) (res string) {
 	return
 }
 
-func OpponentRaiseDecoding(ltr string) (intAmount int) {
+func OpponentRaiseDecoding(ltr string) (intAmount int64) {
 	switch ltr {
 	case "H", "M", "R", "W", "d":
 		intAmount = 5
@@ -1457,39 +1387,30 @@ func RewardCounter(history string, raiseHistory []float64, raiseSize int64) (Tot
 			Total += AllinBound
 			BetPos += AllinBound
 			Standard = minInt(BetPos, Standard)
-		} else if i%1 == 1 {
+		} else if i%3 == 1 {
 			var remainingPlayer int64
 			if (history[i] >= 'H' && history[i] <= 'L') || history[i] == '!' {
-				remainingPlayer = 8
-			} else if (history[i] >= 'M' && history[i] <= 'Q') || history[i] == '@' {
-				remainingPlayer = 7
-			} else if (history[i] >= 'R' && history[i] <= 'V') || history[i] == '#' {
-				remainingPlayer = 6
-			} else if (history[i] >= 'W' && history[i] <= 'Z') || history[i] == 'b' || history[i] == '$' {
-				remainingPlayer = 5
-			} else if (history[i] >= 'd' && history[i] <= 'i') || history[i] == '%' {
-				remainingPlayer = 4
+				remainingPlayer = int64(rand.Int()%5) + 4
 			} else if (history[i] >= 'j' && history[i] <= 'm') || history[i] == '^' {
-				remainingPlayer = 3
-			} else if (history[i] >= 'n' && history[i] <= 'q') || history[i] == '&' {
-				remainingPlayer = 2
+				remainingPlayer = int64(rand.Int()%2) + 2
 			} else {
 				remainingPlayer = 1
 			}
 			raiseNumber := OpponentRaiseDecoding(string([]byte{history[i]}))
 			remainingAct := make([]byte, remainingPlayer)
-			for j := 0; j < raiseNumber; j++ {
+
+			for j := int64(0); j < raiseNumber; j++ {
 				randIndex := rand.Int() % int(remainingPlayer)
-				if remainingAct[randIndex] == 1 {
+				if remainingAct[randIndex] == 2 {
 					j -= 1
 				} else {
-					remainingAct[randIndex] = 1
+					remainingAct[randIndex] += 1
 				}
 			}
 
 			for j := 0; j < int(remainingPlayer); j++ {
-				if remainingAct[j] == 1 {
-					enemyRaise := int64(float64(raiseDiff) * 1.5)
+				if remainingAct[j] > 0 {
+					enemyRaise := int64(float64(raiseDiff)*1.5) * int64(remainingAct[j])
 					raiseDiff = enemyRaise - Standard
 					Total += enemyRaise
 					Standard = enemyRaise
