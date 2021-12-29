@@ -6,8 +6,14 @@ import (
 	"github.com/tam0705/go-cfr/holdem"
 )
 
-var calculatedCombs map[string]float32 = make(map[string]float32)
-var calculatedStrats map[string][]float32 = make(map[string][]float32)
+var RAISE_NUMS = [2][]int{
+	{ 5, 4, 3, 2, 1, 0 },
+	{ 3, 2, 1, 0 },
+}
+
+var calculatedCombs = map[string]float32{}
+var calculatedFolds = map[string][]float32{}
+var calculatedStrats = map[string][]float32{}
 
 func comb(n int, k int) int {
 	if (n < k) {
@@ -30,18 +36,38 @@ func mini(a int, b int) int {
 	return int(math.Min(float64(a), float64(b)))
 }
 
-func calProb(prevOppNum, curOppNum, raiseNum int, isPostflop int) float32 {
-	key := string([]byte{ byte(prevOppNum), byte(curOppNum), byte(raiseNum) })
-	res, ok := calculatedCombs[key]
+func calFoldProb(oppNum, isPostflop int) []float32 {
+	key := string([]byte{ byte(oppNum), byte(isPostflop) })
+	res, ok := calculatedFolds[key]
 
 	if !ok {
 		fold := float64(OPPONENT_STRATEGY[opponentType][isPostflop][0])
-		callCheck := float64(OPPONENT_STRATEGY[opponentType][isPostflop][1])
+		res = append(res, 0.0)
+		if oppNum == 4 {
+			for i := 0; i < 4; i++ {
+				res[0] += float32(comb(8, i)) * float32(math.Pow(fold, float64(i)) * math.Pow(1.0-fold, float64(8-i)))
+			}	
+		}
+		res = append(res, 1-res[0])
+		calculatedFolds[key] = res
+	}
+
+	return res
+}
+
+func calProb(oppNum, raiseNum, isPostflop int) float32 {
+	key := string([]byte{ byte(oppNum), byte(raiseNum), byte(isPostflop) })
+	res, ok := calculatedCombs[key]
+
+	if !ok {
+		foldCall := float64(OPPONENT_STRATEGY[opponentType][isPostflop][0] + OPPONENT_STRATEGY[opponentType][isPostflop][1])
 		raiseAllin := float64(OPPONENT_STRATEGY[opponentType][isPostflop][2] + OPPONENT_STRATEGY[opponentType][isPostflop][3])
-		
-		res = float32(float64(comb(prevOppNum, prevOppNum - curOppNum) * comb(curOppNum, mini(curOppNum, raiseNum))) *
-			math.Pow(raiseAllin, float64(mini(curOppNum, raiseNum))) * math.Pow(callCheck, float64(curOppNum - mini(curOppNum, raiseNum))) *
-			math.Pow(fold, float64(prevOppNum - curOppNum)))
+		if oppNum < 3 {
+			oppNum = 3
+		} else if oppNum <= 8 {
+			oppNum = 5
+		}
+		res = float32(comb(oppNum, raiseNum)) * float32(math.Pow(raiseAllin, float64(raiseNum)) * math.Pow(foldCall, float64(oppNum - raiseNum)))
 
 		calculatedCombs[key] = res
 	}
@@ -59,31 +85,21 @@ func getLastStrength(history string) byte {
 
 func getOppStrat(history string) (int, []float32) {
 	// Pre-flop has some issues
-	prevOppNum := 8
+	prevOppNum := 4
+	boundIndex := 0
 	isPostflop := 0
 	if (len(history) > 1) {
-		prevOppNum, _ = holdem.GetOpponentInfo(getLastOpponentEncoding(history))
+		prevOppNum, boundIndex = holdem.GetOpponentInfo(getLastOpponentEncoding(history))
 		isPostflop = 1
 	}
 	
 	key := string([]byte{ byte(prevOppNum), byte(isPostflop) })
 	res, ok := calculatedStrats[key]
 	if !ok {
-		slice1 := []int{ 3, 2, 1, 0 }
-		slice2 := []int{ 4, 3, 2, 1, 0 }
-		slice3 := []int{ 5, 4, 3, 2, 1, 0 }
-
-		for i := prevOppNum; i >= 1; i-- {
-			var slice []int
-			if i == 1 {
-				slice = slice1
-			} else if i <= 3 {
-				slice = slice2
-			} else if i <= 8 {
-				slice = slice3
-			}
-			for _,j := range slice {
-				res = append(res, calProb(prevOppNum, i, j, isPostflop))
+		folds := calFoldProb(prevOppNum, isPostflop)
+		for i := boundIndex; i < len(RAISE_NUMS); i++ {
+			for _,j := range RAISE_NUMS[i] {
+				res = append(res, calProb(holdem.LOWER_BOUND[i], j, isPostflop) * folds[i])
 			}
 		}
 
@@ -91,4 +107,10 @@ func getOppStrat(history string) (int, []float32) {
 	}
 
 	return prevOppNum, res
+}
+
+func free() {
+	calculatedCombs = nil
+	calculatedFolds = nil
+	calculatedStrats = nil
 }

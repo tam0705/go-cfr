@@ -68,7 +68,7 @@ func Init(opponent OpponentType, policyFileName string) {
 	} else {
 		fmt.Println("Policy data is provided. Loading data..")
 		LoadPolicy(policyFileName, true)
-		fmt.Println("Data loaded")
+		fmt.Println("Data loaded.")
 	}
 
 	hasInit = true
@@ -93,7 +93,7 @@ func Run(nIter int) float64 {
 		}
 	}
 
-	return expectedValue
+	return expectedValue / float64(nIter)
 }
 
 func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
@@ -221,17 +221,25 @@ func LoadPolicy(fileName string, replace bool) {
 	dataFile.Close()
 }
 
+var iStrat int = 0
+
 func setStrategies() {
 	// Pre-flop
 	for _, potential := range holdem.HAND_POTENTIAL {
 		history := string([]byte{potential})
 		setStrategiesRecursive(history)
 	}
+	free()
 }
 
 func setStrategiesRecursive(history string) {
 	prevOppNum, strat := getOppStrat(history)
 	policy.SetStrategy(history, strat)
+
+	iStrat++
+	if iStrat % 1000000 == 0 {
+		fmt.Println(iStrat, "strategies set..")
+	}
 	
 	if len(history) >= 10 {
 		return
@@ -241,7 +249,7 @@ func setStrategiesRecursive(history string) {
 
 	// Post-flop
 	for i, slice := range holdem.ENC_OPPONENT {
-		if 8-i > prevOppNum {
+		if holdem.LOWER_BOUND[i] > prevOppNum {
 			continue
 		}
 		for _, enc := range slice {

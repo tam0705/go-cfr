@@ -45,16 +45,12 @@ var HAND_STRENGTH = [7]byte{
 }
 
 // Encoding for remaining num of opponents + num of raises (H to u, some skipped)
-var ENC_OPPONENT = [8][]byte{
-	{ 'H', 'I', 'J', 'K', 'L', '!' }, // 8 opponents
-	{ 'M', 'N', 'O', 'P', 'Q', '@' }, // 7 opponents
-	{ 'R', 'S', 'T', 'U', 'V', '#' }, // 6 opponents
-	{ 'W', 'X', 'Y', 'Z', 'b', '$' }, // 5 opponents
-	{ 'd', 'e', 'g', 'h', 'i', '%' }, // 4 opponents
-	{ 'j', 'k', 'l', 'm', '^' },      // 3 opponents
-	{ 'n', 'o', 'p', 'q', '&' },      // 2 opponents
-	{ 's', 't', 'u', '*' },           // 1 opponent
+var ENC_OPPONENT = [2][]byte{
+	{ 'H', 'I', 'J', 'K', 'L', '!' }, // 8-4 opponents
+	{ 'k', 'l', 'm', '^' },      // 3-1 opponent(s)
 }
+var LOWER_BOUND = [2]int{ 4, 1 }
+var UPPER_BOUND = [2]int{ 8, 3 }
 
 var PROB_PREFLOP = [10]float64{ 0.006, 0.012, 0.024, 0.054, 0.127, 0.109, 0.024, 0.048, 0.308, 0.288 }
 
@@ -63,8 +59,6 @@ var PROB_POSTFLOP = [4][7]float64{
 	{ 0.000091, 0.00887, 0.0279, 0.036, 0.1244, 0.478, 0.325 },
 	{ 0.0003, 0.0277, 0.0765, 0.0483, 0.2350, 0.4380, 0.1740 },
 }
-
-var PlayerNum int = 2
 
 // PokerNode implements cfr.GameTreeNode for Kuhn Poker.
 type PokerNode struct {
@@ -218,7 +212,7 @@ func (k *PokerNode) Utility(player int) float64 {
 		}
 	}
 	total, betPos := RewardCounter(k.history, raiseArr, int64(len(raiseArr)))
-
+	
 	if k.opponentNum == 0 {
 		// If all opponents folded
 		if len(k.history) < 13 {
@@ -247,14 +241,14 @@ func (k *PokerNode) Utility(player int) float64 {
 	} else if k.history[len(k.history)-1] == 'a' {
 		// If AI did all-in
 		lastStrength := k.handStrength[len(k.handStrength) - 1]
-		win := AllInWinner(string([]byte{lastStrength}), k.opponentNum)
+		win := AllInWinner(string([]byte{lastStrength}), getRandOppNum(k.opponentNum))
 		if win == byte(2) {
 			return float64(total - betPos)
 		} else if win == byte(0) {
 			return float64(-betPos)
 		}
 	}
-
+	
 	return 0.0
 }
 
@@ -295,6 +289,16 @@ func uniformDist(n int) []float64 {
 	return result
 }
 
+func getRandOppNum(n int) int {
+	i, num := 0, 0
+	for i, num = range LOWER_BOUND {
+		if n == num {
+			break
+		}
+	}
+	return rand.Intn(UPPER_BOUND[i] - num) + num
+}
+
 func (k *PokerNode) buildChildren() {
 	switch len(k.history) {
 	case 0:
@@ -328,7 +332,7 @@ func buildPreflop(parent *PokerNode) []PokerNode {
 			player: NODE_OPPONENT,
 			history: string([]byte{potential}),
 			handStrength: string([]byte{potential}),
-			opponentNum: 8,
+			opponentNum: LOWER_BOUND[0],
 		}
 		result = append(result, child)
 	}
@@ -367,7 +371,7 @@ func buildOpponentDeals(parent *PokerNode) []PokerNode {
 	var result []PokerNode
 
 	for i, slice := range ENC_OPPONENT {
-		if 8-i > parent.opponentNum {
+		if LOWER_BOUND[i] > parent.opponentNum {
 			continue
 		}
 		for _, action := range slice {
@@ -375,7 +379,7 @@ func buildOpponentDeals(parent *PokerNode) []PokerNode {
 			child.parent = parent
 			child.player = NODE_AI
 			child.history += string([]byte{action})
-			child.opponentNum = 8-i
+			child.opponentNum = LOWER_BOUND[i]
 			result = append(result, child)
 		}
 	}
@@ -400,9 +404,9 @@ func buildAIDeals(parent *PokerNode) []PokerNode {
 
 func GetOpponentInfo(char byte) (int, int) {
 	for i, slice := range ENC_OPPONENT {
-		for j, e := range slice {
+		for _, e := range slice {
 			if char == e {
-				return 8-i, j+1
+				return LOWER_BOUND[i], i
 			}
 		}
 	}
