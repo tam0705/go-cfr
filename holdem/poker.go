@@ -126,6 +126,9 @@ func (k *PokerNode) GetChildProbability(i int) float64 {
 	if k.children == nil {
 		k.buildChildren()
 	}
+	if k.probabilities == nil {
+		return 0.0
+	}
 
 	return k.probabilities[i]
 }
@@ -208,7 +211,7 @@ func (k *PokerNode) Utility(player int) float64 {
 	for i,b := range k.history {
 		if (b == 'r') {
 			policyData, _ := policy.GetPolicyByKey(k.history[:i])
-			raiseArr = append(raiseArr, float64((policyData.GetStrategy())[1]))
+			raiseArr = append(raiseArr, float64((policyData.GetStrategy())[2]))
 		}
 	}
 	total, betPos := RewardCounter(k.history, raiseArr, int64(len(raiseArr)))

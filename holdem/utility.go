@@ -137,8 +137,8 @@ func OpponentRaiseDecoding(ltr string) (intAmount int64) {
 //OpponentPreviousAction = set to PLAYER_ACTION_FOLD if opponent has not played this round
 func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
 	var currentRound byte = GetCurrentRound(Informations.Card)
-	if len(myHistory) == 3*int(currentRound) {
-		//check whether round repeats, if it does, clean history
+	if len(myHistory) == 3*int(currentRound) && len(myHistory) > 0 {
+		//check whether round repeats, if it does, clean history (ERROR HERE, slice bounds out of range: -2)
 		myHistory = myHistory[0:len(myHistory)-2] + OpponentRaiseEncoding(int(Informations.PlayerNum)-1, int(Informations.RaiseCounter-Informations.RaiseSelf))
 	} else {
 		//every new round, analyze handstrength

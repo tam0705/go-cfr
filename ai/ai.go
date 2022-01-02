@@ -101,7 +101,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 }
 
 func GetExpectation(history string, smallBlind float64) float64 {
-	if len(history)%3 == 0 {
+	if len(history) > 0 && len(history)%3 == 0 {
 		history = history[:len(history)-1]
 	}
 	return getExpectationRecursive(poker.GetNode(history)) * smallBlind

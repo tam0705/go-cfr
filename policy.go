@@ -85,7 +85,7 @@ func (pt *PolicyTable) GetPolicy(node GameTreeNode) NodePolicy {
 func (pt *PolicyTable) GetPolicyByKey(key string) (NodePolicy, bool) {
 	np, ok := pt.PoliciesByKey[key]
 	if !ok {
-		np = policy.New(0)
+		np = policy.New(4)
 	}
 	return np, ok
 }
