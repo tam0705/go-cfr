@@ -86,8 +86,10 @@ func (pt *PolicyTable) GetPolicyByKey(key string) (NodePolicy, bool) {
 	np, ok := pt.PoliciesByKey[key]
 	if !ok {
 		np = policy.New(4)
+		pt.PoliciesByKey[key] = np
+		numInfosets.Set(int64(len(pt.PoliciesByKey)))
 	}
-	return np, ok
+	return np, true
 }
 
 func (pt *PolicyTable) SetStrategy(key string, strat []float32) {
@@ -101,6 +103,7 @@ func (pt *PolicyTable) SetStrategy(key string, strat []float32) {
 			np.NumActions(), len(strat)))
 	}
 	np.SetStrategy(strat)
+	pt.PoliciesByKey[string(key)] = np
 }
 
 func (pt *PolicyTable) Iterate(iterator func(key string, strat []float32)) {

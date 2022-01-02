@@ -77,7 +77,7 @@ var policy *cfr.PolicyTable
 
 func NewGame(p *cfr.PolicyTable) *PokerNode {
 	policy = p
-	pokerGame = &PokerNode{player: NODE_CHANCE}
+	pokerGame = &PokerNode{player: NODE_CHANCE, history: ""}
 	return pokerGame
 }
 
@@ -153,10 +153,13 @@ func (k *PokerNode) Type() cfr.NodeType {
 // cfr.GameTreeNode implementation
 func (k *PokerNode) GetNode(history string) cfr.GameTreeNode {
 	// Recursive method
+	fmt.Println("Finding node.. ", k.history, history)
 	if len(k.history) > len(history) {
+		fmt.Println("NODE 1")
 		return nil
 	}
 	if k.history != history[:len(k.history)] {
+		fmt.Println("NODE 2")
 		return nil
 	}
 	if k.history == history {
@@ -171,7 +174,7 @@ func (k *PokerNode) GetNode(history string) cfr.GameTreeNode {
 		result := child.GetNode(history)
 		if result != nil { return result }
 	}
-
+	fmt.Println("NODE 3")
 	return nil
 }
 
@@ -179,7 +182,8 @@ func GetStrategy(history string) []float64 {
 	policyData, ok := policy.GetPolicyByKey(history)
 
 	if !ok {
-		policyData.SetStrategy(make([]float32, pokerGame.GetNode(history).NumChildren()))
+		policy.SetStrategy(history, uniformDist32(pokerGame.GetNode(history).NumChildren()))
+		policyData, ok = policy.GetPolicyByKey(history)
 	}
 
 	strat := policyData.GetStrategy()
@@ -286,6 +290,15 @@ func (k *PokerNode) InfoSetKey(player int) []byte {
 func uniformDist(n int) []float64 {
 	result := make([]float64, n)
 	num := 1.0 / float64(n)
+	for i := range result {
+		result[i] = num
+	}
+	return result
+}
+
+func uniformDist32(n int) []float32 {
+	result := make([]float32, n)
+	num := float32(1.0) / float32(n)
 	for i := range result {
 		result[i] = num
 	}
