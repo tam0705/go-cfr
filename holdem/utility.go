@@ -137,6 +137,11 @@ func OpponentRaiseDecoding(ltr string) (intAmount int64) {
 //OpponentPreviousAction = set to PLAYER_ACTION_FOLD if opponent has not played this round
 func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
 	var currentRound byte = GetCurrentRound(Informations.Card)
+	//reset history state per round
+	if currentRound == 0 && len(myHistory) != 0 {
+		myHistory = ""
+	}
+
 	if len(myHistory) == 3*int(currentRound) && len(myHistory) > 0 {
 		//check whether round repeats, if it does, clean history (ERROR HERE, slice bounds out of range: -2)
 		myHistory = myHistory[0:len(myHistory)-2] + OpponentRaiseEncoding(int(Informations.PlayerNum)-1, int(Informations.RaiseCounter-Informations.RaiseSelf))
@@ -528,10 +533,10 @@ func HistoryAdd(mycard Def.Cards) string {
 }
 
 func GetCurrentRound(myCard Def.Cards) byte {
-	//4 = river
-	//3 = turn
-	//2 = flop
-	//1 = preflop
+	//3 = river
+	//2 = turn
+	//1 = flop
+	//0 = preflop
 	if myCard[6].Num > 0 && myCard[6].Kind > 0 {
 		return byte(3)
 	} else if myCard[5].Num > 0 && myCard[5].Kind > 0 {
