@@ -165,6 +165,9 @@ func (k *PokerNode) GetNode(history string) cfr.GameTreeNode {
 	if k.history == history {
 		return k
 	}
+	if k.IsTerminal() {
+		return k
+	}
 
 	if k.children == nil {
 		k.buildChildren()
@@ -195,7 +198,6 @@ func GetStrategy(history string) []float64 {
 }
 
 func (k *PokerNode) IsTerminal() bool {
-	// Only valid for two players
 	if len(k.history) <= 1 {
 		return false
 	}
