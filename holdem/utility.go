@@ -35,6 +35,12 @@ const (
 	ALLIN_TRAIN      int64 = 200
 )
 
+//fine tune
+const (
+	ALLIN_REDUCE float64 = 0.7
+	RAISE_REDUCE float64 = 0.5
+)
+
 const RAISE_SMALLEST_AMOUNT = 500
 
 func minInt(a, b int64) int64 {
@@ -159,6 +165,12 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	//historyReady
 	var myStrategy []float64
 	myStrategy = GetStrategy(myHistory)
+	var raisePass float64 = myStrategy[2] * RAISE_REDUCE
+	var allInPass float64 = myStrategy[3] * ALLIN_REDUCE
+	myStrategy[2] -= raisePass
+	myStrategy[3] -= allInPass
+	myStrategy[1] += raisePass
+	myStrategy[1] += allInPass
 
 	//Fold - Call - Check - Fold - Raise, It is always possible for Folding
 	var myAvailableAction [5]string = [5]string{"1", "0", "0", "0", "1"}
