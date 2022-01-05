@@ -170,17 +170,19 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	myStrategy = GetStrategy(myHistory)
 	var raisePass float64 = myStrategy[2] * RAISE_REDUCE
 	var allInPass float64 = myStrategy[3] * ALLIN_REDUCE
-	myStrategy[2] -= raisePass
-	myStrategy[3] -= allInPass
-	//scaling for bets
-	if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
-		myStrategy[1] += raisePass
-		myStrategy[1] += allInPass
-	} else {
-		myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
-		myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
-		myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
-		myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
+	if currentRound == 0 || currentRound > 1 && HistoryAdd(Informations.Card) > "d" {
+		myStrategy[2] -= raisePass
+		myStrategy[3] -= allInPass
+		//scaling for bets
+		if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
+			myStrategy[1] += raisePass
+			myStrategy[1] += allInPass
+		} else {
+			myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
+			myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
+			myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
+			myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
+		}
 	}
 
 	//Fold - Call - Check - Fold - Raise, It is always possible for Folding
