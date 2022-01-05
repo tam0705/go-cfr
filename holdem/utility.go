@@ -171,7 +171,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	myStrategy = GetStrategy(myHistory)
 	var raisePass float64 = myStrategy[2] * RAISE_REDUCE
 	var allInPass float64 = myStrategy[3] * ALLIN_REDUCE
-	if currentRound == 0 || currentRound > 1 && HistoryAdd(Informations.Card) > "D" {
+	if currentRound == 0 {
 		myStrategy[2] -= raisePass
 		myStrategy[3] -= allInPass
 		//scaling for bets
@@ -189,6 +189,24 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 			myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
 			myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
 		}
+	} else if currentRound > 1 && HistoryAdd(Informations.Card) > "D" {
+		/*myStrategy[2] -= raisePass
+		myStrategy[3] -= allInPass
+		//scaling for bets
+		if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
+			myStrategy[1] += raisePass
+			myStrategy[1] += allInPass
+		} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER && Informations.RaiseSelf > 2 {
+			myStrategy[1] += raisePass
+			myStrategy[1] += allInPass
+			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
+			myStrategy[1] += myStrategy[0] * FOLD_REDUCE
+		} else {
+			myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
+			myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
+			myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
+			myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
+		}*/
 	} else {
 		myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
 		myStrategy[1] += myStrategy[0] * FOLD_REDUCE
