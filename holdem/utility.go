@@ -76,13 +76,13 @@ func GetRaiseAmount(ConfidenceAmount, Standard, RaiseDiff, AllInBound float64, I
 	var raiseRatio float64 = 0
 	if ConfidenceAmount >= 0.4 {
 		//freely generate without limit
-		raiseRatio = ratioToRaise + rand.Float64()*(ratioToAllIn-ratioToRaise)*(0.75)
+		raiseRatio = ratioToRaise + rand.Float64()*(ratioToAllIn-ratioToRaise)*(0.8)
 	} else if ConfidenceAmount >= 0.3 {
-		raiseRatio = ratioToRaise + rand.Float64()*(ratioToAllIn-ratioToRaise)*(0.6)
+		raiseRatio = ratioToRaise + rand.Float64()*(ratioToAllIn-ratioToRaise)*(0.7)
 	} else if ConfidenceAmount >= 0.2 {
-		raiseRatio = ratioToRaise + rand.Float64()*(ratioToAllIn-ratioToRaise)*(0.4)
+		raiseRatio = ratioToRaise + rand.Float64()*(ratioToAllIn-ratioToRaise)*(0.6)
 	} else {
-		raiseRatio = ratioToRaise + rand.Float64()*(ratioToAllIn-ratioToRaise)*(0.25)
+		raiseRatio = ratioToRaise + rand.Float64()*(ratioToAllIn-ratioToRaise)*(0.4)
 	}
 	//convert the ratio into real amount
 	raiseRatio *= Standard
