@@ -178,7 +178,9 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 		if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
 			myStrategy[1] += raisePass
 			myStrategy[1] += allInPass
-		} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER || Informations.RaiseSelf > 2 {
+			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
+			myStrategy[1] += myStrategy[0] * FOLD_REDUCE
+		} else if Informations.RaiseSelf > 2 {
 			myStrategy[1] += raisePass
 			myStrategy[1] += allInPass
 			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
@@ -196,7 +198,9 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 		if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
 			myStrategy[1] += raisePass
 			myStrategy[1] += allInPass
-		} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER || Informations.RaiseSelf > 2 {
+			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
+			myStrategy[1] += myStrategy[0] * FOLD_REDUCE
+		} else if Informations.RaiseSelf > 2 {
 			myStrategy[1] += raisePass
 			myStrategy[1] += allInPass
 			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
