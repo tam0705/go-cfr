@@ -37,8 +37,10 @@ const (
 
 //fine tune
 const (
-	ALLIN_REDUCE float64 = 0.8
-	RAISE_REDUCE float64 = 0.9
+	//This is for vs pessimistic AI fine tune
+	ALLIN_REDUCE           float64 = 0.8
+	RAISE_REDUCE           float64 = 0.9
+	RAISE_LIMIT_MULTIPLIER float64 = 50
 )
 
 const RAISE_SMALLEST_AMOUNT = 500
@@ -60,7 +62,7 @@ func maxInt(a, b int64) int64 {
 }
 
 func GetRaiseAmount(ConfidenceAmount, Standard, RaiseDiff, AllInBound float64, Informations Def.RobotInherit) float64 {
-	var ratioToAllIn float64 = math.Min(AllInBound-Informations.BetPos, Informations.ContestMoney) / Standard
+	var ratioToAllIn float64 = math.Min(math.Min(AllInBound-Informations.BetPos, Informations.ContestMoney), Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER) / Standard
 	var ratioToRaise float64 = (RaiseDiff + Standard - Informations.BetPos) / Standard
 	//ratioToAllIn /= Informations.SbBet
 	//ratioToRaise /= Informations.SbBet
@@ -238,7 +240,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 				myBet = Standard - Informations.BetPos
 				myHistory += "c"
 			}
-		} else if randomFloat < myStrategy[0]+myStrategy[1]+myStrategy[2] {
+		} else if randomFloat < myStrategy[0]+myStrategy[1]+myStrategy[2] && Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
 			myAction = Def.PLAYER_ACTION_RAISE
 			myBet = GetRaiseAmount(myStrategy[2], Standard, RaiseDiff, AllInBound, Informations)
 			myHistory += "r"
