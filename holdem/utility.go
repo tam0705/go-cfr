@@ -42,7 +42,7 @@ const (
 	RAISE_REDUCE           float64 = 0.9
 	RAISE_LIMIT_MULTIPLIER float64 = 50
 	MONEY_TOO_BIG_PASS     float64 = 0.3
-	FOLD_REDUCE            float64 = 0.5
+	FOLD_REDUCE            float64 = 0.7
 )
 
 const RAISE_SMALLEST_AMOUNT = 500
