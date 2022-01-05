@@ -189,7 +189,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 			myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
 			myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
 		}
-	} else if currentRound > 1 && HistoryAdd(Informations.Card) > "D" {
+	} else if currentRound > 1 && HistoryAdd(Informations.Card) > "d" {
 		myStrategy[2] -= raisePass
 		myStrategy[3] -= allInPass
 		//scaling for bets
