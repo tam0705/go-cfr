@@ -40,7 +40,7 @@ const (
 	//This is for vs pessimistic AI fine tune
 	ALLIN_REDUCE           float64 = 0.5
 	RAISE_REDUCE           float64 = 0.6
-	RAISE_LIMIT_MULTIPLIER float64 = 500
+	RAISE_LIMIT_MULTIPLIER float64 = 50
 	MONEY_TOO_BIG_PASS     float64 = 0.3
 	FOLD_REDUCE            float64 = 0.5
 )
@@ -169,48 +169,49 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	//historyReady
 	var myStrategy []float64
 	myStrategy = GetStrategy(myHistory)
-	var raisePass float64 = myStrategy[2] * RAISE_REDUCE
-	var allInPass float64 = myStrategy[3] * ALLIN_REDUCE
-	if currentRound == 0 {
-		myStrategy[2] -= raisePass
-		myStrategy[3] -= allInPass
-		//scaling for bets
-		if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
-			myStrategy[1] += raisePass
-			myStrategy[1] += allInPass
-		} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER || Informations.RaiseSelf > 2 {
-			myStrategy[1] += raisePass
-			myStrategy[1] += allInPass
+	/*
+		var raisePass float64 = myStrategy[2] * RAISE_REDUCE
+		var allInPass float64 = myStrategy[3] * ALLIN_REDUCE
+		if currentRound == 0 {
+			myStrategy[2] -= raisePass
+			myStrategy[3] -= allInPass
+			//scaling for bets
+			if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
+				myStrategy[1] += raisePass
+				myStrategy[1] += allInPass
+			} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER || Informations.RaiseSelf > 2 {
+				myStrategy[1] += raisePass
+				myStrategy[1] += allInPass
+				myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
+				myStrategy[1] += myStrategy[0] * FOLD_REDUCE
+			} else {
+				myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
+				myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
+				myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
+				myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
+			}
+		} else if currentRound > 1 && HistoryAdd(Informations.Card) > "D" {
+			myStrategy[2] -= raisePass
+			myStrategy[3] -= allInPass
+			//scaling for bets
+			if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
+				myStrategy[1] += raisePass
+				myStrategy[1] += allInPass
+			} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER || Informations.RaiseSelf > 2 {
+				myStrategy[1] += raisePass
+				myStrategy[1] += allInPass
+				myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
+				myStrategy[1] += myStrategy[0] * FOLD_REDUCE
+			} else {
+				myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
+				myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
+				myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
+				myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
+			}
+		} else {
 			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
 			myStrategy[1] += myStrategy[0] * FOLD_REDUCE
-		} else {
-			myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
-			myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
-			myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
-			myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
-		}
-	} else if currentRound > 1 && HistoryAdd(Informations.Card) > "D" {
-		myStrategy[2] -= raisePass
-		myStrategy[3] -= allInPass
-		//scaling for bets
-		if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
-			myStrategy[1] += raisePass
-			myStrategy[1] += allInPass
-		} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER || Informations.RaiseSelf > 2 {
-			myStrategy[1] += raisePass
-			myStrategy[1] += allInPass
-			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
-			myStrategy[1] += myStrategy[0] * FOLD_REDUCE
-		} else {
-			myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
-			myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
-			myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
-			myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
-		}
-	} else {
-		myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
-		myStrategy[1] += myStrategy[0] * FOLD_REDUCE
-	}
+		}*/
 
 	//Fold - Call - Check - Fold - Raise, It is always possible for Folding
 	var myAvailableAction [5]string = [5]string{"1", "0", "0", "0", "1"}
