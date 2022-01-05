@@ -181,7 +181,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 		if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER && Informations.RaiseSelf < 2 {
 			myStrategy[1] += raisePass
 			myStrategy[1] += allInPass
-		} else if currentRound > 0 && HistoryAdd(Informations.Card) == "G" {
+			/*} else if currentRound > 0 && HistoryAdd(Informations.Card) == "G" {
 			if !repeating {
 				myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
 				myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
@@ -193,7 +193,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 				myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
 				myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
 			}
-
+			*/
 		} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
 			myStrategy[1] += raisePass
 			myStrategy[1] += allInPass
