@@ -38,9 +38,10 @@ const (
 //fine tune
 const (
 	//This is for vs pessimistic AI fine tune
-	ALLIN_REDUCE           float64 = 0.8
-	RAISE_REDUCE           float64 = 0.9
+	ALLIN_REDUCE           float64 = 0.6
+	RAISE_REDUCE           float64 = 0.8
 	RAISE_LIMIT_MULTIPLIER float64 = 50
+	MONEY_TOO_BIG_PASS     float64 = 0.3
 )
 
 const RAISE_SMALLEST_AMOUNT = 500
@@ -171,8 +172,16 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	var allInPass float64 = myStrategy[3] * ALLIN_REDUCE
 	myStrategy[2] -= raisePass
 	myStrategy[3] -= allInPass
-	myStrategy[1] += raisePass
-	myStrategy[1] += allInPass
+	//scaling for bets
+	if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
+		myStrategy[1] += raisePass
+		myStrategy[1] += allInPass
+	} else {
+		myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
+		myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
+		myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
+		myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
+	}
 
 	//Fold - Call - Check - Fold - Raise, It is always possible for Folding
 	var myAvailableAction [5]string = [5]string{"1", "0", "0", "0", "1"}
@@ -184,7 +193,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	}
 
 	//consider availability for raise
-	if (RaiseDiff+Standard-Informations.BetPos) < Informations.ContestMoney && (RaiseDiff+Standard) < AllInBound {
+	if (RaiseDiff+Standard-Informations.BetPos) < Informations.ContestMoney && (RaiseDiff+Standard) < AllInBound && Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
 		myAvailableAction[3] = "1"
 	}
 
@@ -240,7 +249,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 				myBet = Standard - Informations.BetPos
 				myHistory += "c"
 			}
-		} else if randomFloat < myStrategy[0]+myStrategy[1]+myStrategy[2] && Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
+		} else if randomFloat < myStrategy[0]+myStrategy[1]+myStrategy[2] {
 			myAction = Def.PLAYER_ACTION_RAISE
 			myBet = GetRaiseAmount(myStrategy[2], Standard, RaiseDiff, AllInBound, Informations)
 			myHistory += "r"
