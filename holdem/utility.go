@@ -37,8 +37,8 @@ const (
 
 //fine tune
 const (
-	ALLIN_REDUCE float64 = 0.7
-	RAISE_REDUCE float64 = 0.5
+	ALLIN_REDUCE float64 = 1
+	RAISE_REDUCE float64 = 1
 )
 
 const RAISE_SMALLEST_AMOUNT = 500
