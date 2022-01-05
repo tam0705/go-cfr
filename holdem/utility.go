@@ -38,11 +38,11 @@ const (
 //fine tune
 const (
 	//This is for vs pessimistic AI fine tune
-	ALLIN_REDUCE           float64 = 0.6
-	RAISE_REDUCE           float64 = 0.8
+	ALLIN_REDUCE           float64 = 0.5
+	RAISE_REDUCE           float64 = 0.6
 	RAISE_LIMIT_MULTIPLIER float64 = 50
 	MONEY_TOO_BIG_PASS     float64 = 0.3
-	FOLD_REDUCE            float64 = 0.5
+	FOLD_REDUCE            float64 = 0.3
 )
 
 const RAISE_SMALLEST_AMOUNT = 500
