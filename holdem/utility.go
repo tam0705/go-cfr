@@ -43,7 +43,7 @@ const (
 	RAISE_LIMIT_MULTIPLIER float64 = 50
 	MONEY_TOO_BIG_PASS     float64 = 0.3
 	FOLD_REDUCE            float64 = 0.7
-	REPEATING_REDUCE       float64 = 0.4
+	REPEATING_REDUCE       float64 = 0.5
 )
 
 const RAISE_SMALLEST_AMOUNT = 500
@@ -190,6 +190,8 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 			} else {
 				myStrategy[1] += raisePass
 				myStrategy[1] += allInPass
+				myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
+				myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
 			}
 
 		} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
