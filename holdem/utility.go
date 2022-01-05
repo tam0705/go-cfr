@@ -140,8 +140,8 @@ func OpponentRaiseDecoding(ltr string) (intAmount int64) {
 	return
 }
 
-//OpponentPreviousAction = set to PLAYER_ACTION_FOLD if opponent has not played this round
 func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
+	fmt.Println("Changes affects now!")
 	var currentRound byte = GetCurrentRound(Informations.Card)
 	//reset history state per round
 	if currentRound == 0 && len(myHistory) != 0 {
