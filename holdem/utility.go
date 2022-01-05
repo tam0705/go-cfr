@@ -43,6 +43,7 @@ const (
 	RAISE_LIMIT_MULTIPLIER float64 = 50
 	MONEY_TOO_BIG_PASS     float64 = 0.3
 	FOLD_REDUCE            float64 = 0.7
+	REPEATING_REDUCE       float64 = 0.4
 )
 
 const RAISE_SMALLEST_AMOUNT = 500
@@ -151,9 +152,11 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	if currentRound == 0 && len(myHistory) != 0 {
 		myHistory = ""
 	}
+	var repeating bool = false
 
 	if len(myHistory) == 3*int(currentRound) && len(myHistory) > 0 {
 		//check whether round repeats, if it does, clean history (ERROR HERE, slice bounds out of range: -2)
+		repeating = true
 		myHistory = myHistory[0:len(myHistory)-2] + OpponentRaiseEncoding(int(Informations.PlayerNum)-1, int(Informations.RaiseCounter-Informations.RaiseSelf))
 	} else {
 		//every new round, analyze handstrength
@@ -178,25 +181,43 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 		if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER && Informations.RaiseSelf < 2 {
 			myStrategy[1] += raisePass
 			myStrategy[1] += allInPass
-		} else if currentRound > 0 && HistoryAdd(Informations.Card) > "G" {
-			myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
-			myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
-			myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
-			myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
+		} else if currentRound > 0 && HistoryAdd(Informations.Card) == "G" {
+			if !repeating {
+				myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
+				myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
+				myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
+				myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
+			} else {
+				myStrategy[1] += raisePass
+				myStrategy[1] += allInPass
+			}
+
 		} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
 			myStrategy[1] += raisePass
 			myStrategy[1] += allInPass
-			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
 			myStrategy[1] += myStrategy[0] * FOLD_REDUCE
+			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
+			if repeating {
+				myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
+				myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
+			}
 		} else {
 			myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
 			myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
 			myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
 			myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
+			if repeating {
+				myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
+				myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
+			}
 		}
 	} else {
-		myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
 		myStrategy[1] += myStrategy[0] * FOLD_REDUCE
+		myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
+		if repeating {
+			myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
+			myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
+		}
 	}
 
 	//Fold - Call - Check - Fold - Raise, It is always possible for Folding
