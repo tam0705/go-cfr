@@ -178,14 +178,14 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	myStrategy = GetStrategy(myHistory)
 	var raisePass float64 = myStrategy[2] * RAISE_REDUCE
 	var allInPass float64 = myStrategy[3] * ALLIN_REDUCE
-	if currentRound == 0 && myHistory[0] == '9' {
+	/*if currentRound == 0 && myHistory[0] == '9' {
 		myStrategy[0] += myStrategy[1] * PREFLOP_HIGHPASS_CHECK
 		myStrategy[0] += myStrategy[2] * PREFLOP_HIGHPASS_RAISE
 		myStrategy[0] += myStrategy[3] * PREFLOP_HIGHPASS_ALLIN
 		myStrategy[1] -= myStrategy[1] * PREFLOP_HIGHPASS_CHECK
 		myStrategy[2] -= myStrategy[2] * PREFLOP_HIGHPASS_RAISE
 		myStrategy[3] -= myStrategy[3] * PREFLOP_HIGHPASS_ALLIN
-	} else if currentRound == 0 || currentRound > 1 && HistoryAdd(Informations.Card) > "D" {
+	} else*/if currentRound == 0 || currentRound > 1 && HistoryAdd(Informations.Card) > "D" {
 		myStrategy[2] -= raisePass
 		myStrategy[3] -= allInPass
 		//scaling for bets
