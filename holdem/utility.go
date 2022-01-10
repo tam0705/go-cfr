@@ -214,11 +214,16 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 			}
 		}
 	} else {
-		myStrategy[1] += myStrategy[0] * FOLD_REDUCE
-		myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
-		if repeating {
-			myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
-			myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
+		if currentRound == 3 {
+			myStrategy[1] += myStrategy[0]
+			myStrategy[0] = 0
+		} else {
+			myStrategy[1] += myStrategy[0] * FOLD_REDUCE
+			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
+			if repeating {
+				myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
+				myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
+			}
 		}
 	}
 
