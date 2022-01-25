@@ -42,14 +42,14 @@ const (
 	RAISE_REDUCE           float64 = 0.9
 	RAISE_LIMIT_MULTIPLIER float64 = 50
 	MONEY_TOO_BIG_PASS     float64 = 0.3
-	FOLD_REDUCE            float64 = 0.8
+	FOLD_REDUCE            float64 = 0.9
 	REPEATING_REDUCE       float64 = 0.5
 
 	PREFLOP_HIGHPASS_CHECK float64 = 0.5
 	PREFLOP_HIGHPASS_RAISE float64 = 0.9
 	PREFLOP_HIGHPASS_ALLIN float64 = 0.9
 
-	REPEATING_RESET_DISABLE bool = false
+	REPEATING_RESET_DISABLE bool = true
 )
 
 const RAISE_SMALLEST_AMOUNT = 500
