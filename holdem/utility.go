@@ -48,6 +48,8 @@ const (
 	PREFLOP_HIGHPASS_CHECK float64 = 0.5
 	PREFLOP_HIGHPASS_RAISE float64 = 0.9
 	PREFLOP_HIGHPASS_ALLIN float64 = 0.9
+
+	REPEATING_RESET_DISABLE bool = true
 )
 
 const RAISE_SMALLEST_AMOUNT = 500
@@ -161,7 +163,9 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	if len(myHistory) == 3*int(currentRound) && len(myHistory) > 0 {
 		//check whether round repeats, if it does, clean history (ERROR HERE, slice bounds out of range: -2)
 		repeating = true
-		myHistory = myHistory[0:len(myHistory)-2] + OpponentRaiseEncoding(int(Informations.PlayerNum)-1, int(Informations.RaiseCounter-Informations.RaiseSelf))
+		if !REPEATING_RESET_DISABLE {
+			myHistory = myHistory[0:len(myHistory)-2] + OpponentRaiseEncoding(int(Informations.PlayerNum)-1, int(Informations.RaiseCounter-Informations.RaiseSelf))
+		}
 	} else {
 		//every new round, analyze handstrength
 		if len(myHistory) == 0 {
