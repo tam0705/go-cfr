@@ -165,6 +165,8 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 		repeating = true
 		if !REPEATING_RESET_DISABLE {
 			myHistory = myHistory[0:len(myHistory)-2] + OpponentRaiseEncoding(int(Informations.PlayerNum)-1, int(Informations.RaiseCounter-Informations.RaiseSelf))
+		} else {
+			myHistory = myHistory[0 : len(myHistory)-1]
 		}
 	} else {
 		//every new round, analyze handstrength
