@@ -171,7 +171,7 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	} else {
 		//every new round, analyze handstrength
 		if len(myHistory) == 0 {
-			myHistory += checker(Informations.Card)
+			myHistory += Checker(Informations.Card)
 		} else {
 			myHistory += HistoryAdd(Informations.Card)
 		}
@@ -1313,7 +1313,7 @@ func setHighCard(numberOfRound int, p bool) Def.Cards {
 	return myCard
 }
 
-func checker(mycard Def.Cards) string {
+func Checker(mycard Def.Cards) string {
 	sameSuit := (mycard[0].Kind == mycard[1].Kind)
 	inOrder := (int(mycard[0].Num) - int(mycard[1].Num)) == 1
 	if !inOrder {
