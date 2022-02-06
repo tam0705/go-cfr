@@ -309,8 +309,8 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 }
 
 func ArrangeCards(mycard Def.Cards) Def.Cards {
-	for i := 0; i < 6-1; i++ {
-		for j := 0; j < 6-i-1; j++ {
+	for i := 0; i < 6; i++ {
+		for j := 0; j < 7-i-1; j++ {
 			if mycard[j+1].Kind == 0 && mycard[j+1].Num == 0 {
 				continue
 			}
@@ -318,7 +318,7 @@ func ArrangeCards(mycard Def.Cards) Def.Cards {
 				var temp Def.Poker = mycard[j]
 				mycard[j] = mycard[j+1]
 				mycard[j+1] = temp
-			} else if mycard[j].Num == mycard[j+1].Num && mycard[j].Kind == mycard[j+1].Kind {
+			} else if mycard[j].Num == mycard[j+1].Num && mycard[j].Kind > mycard[j+1].Kind {
 				var temp Def.Poker = mycard[j]
 				mycard[j] = mycard[j+1]
 				mycard[j+1] = temp
@@ -330,6 +330,23 @@ func ArrangeCards(mycard Def.Cards) Def.Cards {
 
 func HistoryAdd(mycard Def.Cards) string {
 	mycard = ArrangeCards(mycard)
+	//fmt.Println("arranged cards: ", mycard)
+	for i := 0; i < 3; i++ {
+		if mycard[i].Num == 10 {
+			var currentlySearching byte = 11
+			for j := i + 1; j < 7; j++ {
+				if mycard[j].Num > currentlySearching || mycard[j].Num == 0 || mycard[j].Num == currentlySearching && mycard[j].Kind > mycard[i].Kind {
+					break
+				} else if mycard[j].Num == currentlySearching && mycard[j].Kind == mycard[i].Kind {
+					if currentlySearching == 14 {
+						return "A"
+					} else {
+						currentlySearching++
+					}
+				}
+			}
+		}
+	}
 	var handStrength byte = 0
 	var plums Def.Cards
 	var plumsLength byte = 0
@@ -378,6 +395,8 @@ func HistoryAdd(mycard Def.Cards) string {
 			}
 			plums[i] = mycard[index]
 			plumsLength += 1
+			//fmt.Println("straight length: ", plums)
+			//fmt.Println("straight content: ", plumsLength)
 		} else if mycard[index].Kind == 2 {
 			var i byte
 			for i = 0; i < diamondsLength; i++ {
@@ -415,7 +434,8 @@ func HistoryAdd(mycard Def.Cards) string {
 			spades[i] = mycard[index]
 			spadesLength += 1
 		}
-
+		//fmt.Println("straight length: ", straightLength)
+		//fmt.Println("straight content: ", straight)
 		//take care of straight with no symbol difference
 		if straightLength != 0 {
 			if straightLength == 5 {
@@ -499,42 +519,59 @@ func HistoryAdd(mycard Def.Cards) string {
 
 	//analyzing handstrength
 	//royal flush and straight flush
-	if spadesLength == 5 || heartsLength == 5 || diamondsLength == 5 || plumsLength == 5 {
+	if spadesLength >= 5 || heartsLength >= 5 || diamondsLength >= 5 || plumsLength >= 5 {
 		//flush available
 		//but check for royal flush/straight flush
-		if spadesLength == 5 {
-			for i := 1; i < 5; i++ {
+		var sfCount int = 1
+		if spadesLength >= 5 {
+			for i := byte(1); i < spadesLength; i++ {
 				if spades[i].Num != (spades[i-1].Num + 1) {
-					break
-				} else if i == 4 {
+					sfCount = 1
+				} else {
+					sfCount++
+				}
+				if sfCount == 5 {
 					handStrength = 6
+					break
 				}
 			}
 		}
-		if heartsLength == 5 {
-			for i := 1; i < 5; i++ {
+		if heartsLength >= 5 {
+			for i := byte(1); i < heartsLength; i++ {
 				if hearts[i].Num != (hearts[i-1].Num + 1) {
-					break
-				} else if i == 4 {
+					sfCount = 1
+				} else {
+					sfCount++
+				}
+				if sfCount == 5 {
 					handStrength = 6
+					break
 				}
 			}
 		}
-		if diamondsLength == 5 {
-			for i := 1; i < 5; i++ {
+		if diamondsLength >= 5 {
+			for i := byte(1); i < diamondsLength; i++ {
 				if diamonds[i].Num != (diamonds[i-1].Num + 1) {
-					break
-				} else if i == 4 {
+					sfCount = 1
+				} else {
+					sfCount++
+				}
+				if sfCount == 5 {
 					handStrength = 6
+					break
 				}
 			}
 		}
-		if plumsLength == 5 {
-			for i := 1; i < 5; i++ {
+		if plumsLength >= 5 {
+			for i := byte(1); i < plumsLength; i++ {
 				if plums[i].Num != (plums[i-1].Num + 1) {
-					break
-				} else if i == 4 {
+					sfCount = 1
+				} else {
+					sfCount++
+				}
+				if sfCount == 5 {
 					handStrength = 6
+					break
 				}
 			}
 		}
@@ -559,6 +596,7 @@ func HistoryAdd(mycard Def.Cards) string {
 	//straight
 	if handStrength < 4 && straightLength == 5 {
 		handStrength = 4
+		//fmt.Println("entering!")
 	}
 
 	//3 of a kind
@@ -573,7 +611,7 @@ func HistoryAdd(mycard Def.Cards) string {
 			handStrength = 1
 		}
 	}
-
+	//fmt.Println("handstrength: ", handStrength)
 	/*Power encoding
 	6 = a
 	5 = b
@@ -1330,9 +1368,9 @@ func Checker(mycard Def.Cards) string {
 			}
 		} else {
 			if p {
-				return "5"
+				return "4"
 			} else {
-				return "6"
+				return "5"
 			}
 		}
 	} else if pair {
