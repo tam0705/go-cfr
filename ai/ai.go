@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/tam0705/go-cfr"
-	"github.com/tam0705/go-cfr/def"
+	Def "github.com/tam0705/go-cfr/def"
 	"github.com/tam0705/go-cfr/holdem"
 	"github.com/tam0705/go-cfr/sampling"
 	"github.com/tam0705/go-cfr/tree"
@@ -88,7 +88,7 @@ func Run(nIter int) float64 {
 	for i := 1; i <= nIter; i++ {
 		expectedValue += float64(CFR.Run(poker))
 
-		if i%(nIter/100) == 0 {
+		if i%(nIter/1000) == 0 {
 			fmt.Printf("%d iterations done.. Expected value: %.5f\n", i, expectedValue/float64(i))
 		}
 	}
@@ -237,10 +237,10 @@ func setStrategiesRecursive(history string) {
 	policy.SetStrategy(history, strat)
 
 	iStrat++
-	if iStrat % 1000000 == 0 {
+	if iStrat%1000000 == 0 {
 		fmt.Println(iStrat, "strategies set..")
 	}
-	
+
 	if len(history) >= 10 {
 		return
 	}
@@ -253,12 +253,12 @@ func setStrategiesRecursive(history string) {
 			continue
 		}
 		for _, enc := range slice {
-			for _, act := range[]byte{ 'c','r' } {
+			for _, act := range []byte{'c', 'r'} {
 				for _, s := range holdem.HAND_STRENGTH {
 					if lastStrength > '9' && s > lastStrength {
 						continue
 					}
-					setStrategiesRecursive(history + string([]byte{ enc, act, s }))
+					setStrategiesRecursive(history + string([]byte{enc, act, s}))
 				}
 			}
 		}
