@@ -1493,7 +1493,7 @@ func RewardCounter(history string, raiseHistory []float64, raiseSize int64) (Tot
 			Standard = minInt(BetPos, Standard)
 		} else if i%3 == 1 {
 			var remainingPlayer int64
-			if (history[i] >= 'H' && history[i] <= 'L') || history[i] == '!' {
+			if (history[i] >= 'I' && history[i] <= 'L') || history[i] == '!' {
 				remainingPlayer = int64(rand.Int()%5) + 4
 			} else {
 				remainingPlayer = int64(rand.Int()%3) + 1
