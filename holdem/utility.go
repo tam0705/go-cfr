@@ -37,7 +37,9 @@ const (
 
 //fine tune
 const (
-	//This is for vs pessimistic AI fine tune
+	//This is for vs NEUTRAL AI fine tune
+	FINETUNE_ON            bool    = true
+	BLUFF                  bool    = false
 	ALLIN_REDUCE           float64 = 0.8
 	RAISE_REDUCE           float64 = 0.9
 	RAISE_LIMIT_MULTIPLIER float64 = 80
@@ -105,8 +107,8 @@ func OpponentRaiseEncoding(rp, raiseNum int) (res string) {
 	res = ""
 	if rp > 3 {
 		switch raiseNum {
-		case 4:
-			res = "I"
+		// case 4:
+		// 	res = "I"
 		case 3:
 			res = "J"
 		case 2:
@@ -116,7 +118,8 @@ func OpponentRaiseEncoding(rp, raiseNum int) (res string) {
 		case 0:
 			res = "!"
 		default:
-			res = "H"
+			//res = "H"
+			res = "I"
 		}
 	} else {
 		switch raiseNum {
@@ -152,7 +155,7 @@ func OpponentRaiseDecoding(ltr string) (intAmount int64) {
 }
 
 func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllInBound float64, myHistory string) (Def.PlayerAction, float64, string) {
-	fmt.Println("Changes affects now!")
+	fmt.Println("New version used!")
 	var currentRound byte = GetCurrentRound(Informations.Card)
 	//reset history state per round
 	if currentRound == 0 && len(myHistory) != 0 {
@@ -182,49 +185,51 @@ func GetDecision(Informations Def.RobotInherit, Standard, Total, RaiseDiff, AllI
 	//historyReady
 	var myStrategy []float64
 	myStrategy = GetStrategy(myHistory)
-	var raisePass float64 = myStrategy[2] * RAISE_REDUCE
-	var allInPass float64 = myStrategy[3] * ALLIN_REDUCE
-	if currentRound == 0 || currentRound >= 1 && HistoryAdd(Informations.Card) > "E" {
-		myStrategy[2] -= raisePass
-		myStrategy[3] -= allInPass
-		//scaling for bets
-		if currentRound == 3 {
-			myStrategy[1] += raisePass
-			myStrategy[1] += allInPass
-			myStrategy[1] += myStrategy[0]
-			myStrategy[0] -= myStrategy[0]
-		} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER && Informations.RaiseSelf < 2 {
-			myStrategy[1] += raisePass
-			myStrategy[1] += allInPass
-		} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
-			myStrategy[1] += raisePass
-			myStrategy[1] += allInPass
-			myStrategy[1] += myStrategy[0] * FOLD_REDUCE
-			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
-			if repeating {
-				myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
-				myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
+	if FINETUNE_ON {
+		var raisePass float64 = myStrategy[2] * RAISE_REDUCE
+		var allInPass float64 = myStrategy[3] * ALLIN_REDUCE
+		if currentRound == 0 || currentRound >= 1 && HistoryAdd(Informations.Card) > "E" {
+			myStrategy[2] -= raisePass
+			myStrategy[3] -= allInPass
+			//scaling for bets
+			if currentRound == 3 {
+				myStrategy[1] += raisePass
+				myStrategy[1] += allInPass
+				myStrategy[1] += myStrategy[0]
+				myStrategy[0] -= myStrategy[0]
+			} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER && Informations.RaiseSelf < 2 {
+				myStrategy[1] += raisePass
+				myStrategy[1] += allInPass
+			} else if Standard < Informations.SbBet*2*RAISE_LIMIT_MULTIPLIER {
+				myStrategy[1] += raisePass
+				myStrategy[1] += allInPass
+				myStrategy[1] += myStrategy[0] * FOLD_REDUCE
+				myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
+				if repeating {
+					myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
+					myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
+				}
+			} else {
+				myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
+				myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
+				myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
+				myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
+				if repeating {
+					myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
+					myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
+				}
 			}
 		} else {
-			myStrategy[0] += raisePass * MONEY_TOO_BIG_PASS
-			myStrategy[0] += allInPass * MONEY_TOO_BIG_PASS
-			myStrategy[1] += raisePass * (1 - MONEY_TOO_BIG_PASS)
-			myStrategy[1] += allInPass * (1 - MONEY_TOO_BIG_PASS)
-			if repeating {
-				myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
-				myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
-			}
-		}
-	} else {
-		if currentRound == 3 {
-			myStrategy[1] += myStrategy[0]
-			myStrategy[0] = 0
-		} else {
-			myStrategy[1] += myStrategy[0] * FOLD_REDUCE
-			myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
-			if repeating {
-				myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
-				myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
+			if currentRound == 3 {
+				myStrategy[1] += myStrategy[0]
+				myStrategy[0] = 0
+			} else {
+				myStrategy[1] += myStrategy[0] * FOLD_REDUCE
+				myStrategy[0] -= myStrategy[0] * FOLD_REDUCE
+				if repeating {
+					myStrategy[1] += myStrategy[0] * REPEATING_REDUCE
+					myStrategy[0] -= myStrategy[0] * REPEATING_REDUCE
+				}
 			}
 		}
 	}

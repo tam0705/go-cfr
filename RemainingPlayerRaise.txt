@@ -1,7 +1,6 @@
 Remaining Player when All In randomized between the range. 
 8-4 player
- - 5 raise/above : 'H'
- - 4 raise : 'I'
+ - 4 raise/above : 'I'
  - 3 raise : 'J'
  - 2 raise : 'K'
  - 1 raise: 'L'
